@@ -31,8 +31,9 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown } from "lucide-react";
+import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown, Copy, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useState as useStateReact } from "react";
 
 type SortOption = "date-desc" | "date-asc" | "category-asc" | "category-desc";
 
@@ -59,6 +60,35 @@ interface Prompt {
   prompt_text: string;
   created_at: string;
 }
+
+const CopyButton = ({ text }: { text: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast({
+      title: "¡Copiado!",
+      description: "El prompt se copió al portapapeles.",
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8"
+      onClick={handleCopy}
+    >
+      {copied ? (
+        <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+      ) : (
+        <Copy className="h-4 w-4" />
+      )}
+    </Button>
+  );
+};
 
 const MyPrompts = () => {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -318,6 +348,7 @@ const MyPrompts = () => {
                       </p>
                     </div>
                     <div className="flex gap-1">
+                      <CopyButton text={prompt.prompt_text} />
                       <Button
                         variant="ghost"
                         size="icon"
