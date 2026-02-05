@@ -31,9 +31,15 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown, Copy, Check } from "lucide-react";
+import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown, Copy, Check, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type SortOption = "date-desc" | "date-asc" | "category-asc" | "category-desc";
 
@@ -235,6 +241,42 @@ const MyPrompts = () => {
     navigate("/auth");
   };
 
+  const exportToJSON = () => {
+    const dataStr = JSON.stringify(prompts, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "mis-prompts.json";
+    link.click();
+    URL.revokeObjectURL(url);
+    toast({
+      title: "Exportado",
+      description: "Tus prompts se exportaron como JSON.",
+    });
+  };
+
+  const exportToCSV = () => {
+    const headers = ["Categoría", "Prompt", "Fecha"];
+    const rows = prompts.map((p) => [
+      `"${p.category.replace(/"/g, '""')}"`,
+      `"${p.prompt_text.replace(/"/g, '""').replace(/\n/g, " ")}"`,
+      `"${new Date(p.created_at).toLocaleDateString("es-ES")}"`,
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "mis-prompts.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+    toast({
+      title: "Exportado",
+      description: "Tus prompts se exportaron como CSV.",
+    });
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -250,6 +292,24 @@ const MyPrompts = () => {
           <h1 className="text-2xl font-semibold text-foreground">Mis Prompts</h1>
           <div className="flex gap-2">
             <ThemeToggle />
+            {prompts.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Download className="mr-1 h-4 w-4" />
+                    Exportar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-popover">
+                  <DropdownMenuItem onClick={exportToJSON}>
+                    Exportar como JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportToCSV}>
+                    Exportar como CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button variant="outline" size="sm" onClick={() => navigate("/")}>
               <Plus className="mr-1 h-4 w-4" />
               Nuevo
