@@ -40,6 +40,7 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          is_favorite: boolean
           prompt_text: string
           user_id: string | null
         }
@@ -47,6 +48,7 @@ export type Database = {
           category: string
           created_at?: string
           id?: string
+          is_favorite?: boolean
           prompt_text: string
           user_id?: string | null
         }
@@ -54,6 +56,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          is_favorite?: boolean
           prompt_text?: string
           user_id?: string | null
         }
