@@ -31,8 +31,17 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Trash2, Plus, LogOut, Search, X } from "lucide-react";
+import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
+type SortOption = "date-desc" | "date-asc" | "category-asc" | "category-desc";
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "date-desc", label: "Más recientes" },
+  { value: "date-asc", label: "Más antiguos" },
+  { value: "category-asc", label: "Categoría (A-Z)" },
+  { value: "category-desc", label: "Categoría (Z-A)" },
+];
 
 const CATEGORIES = [
   "Creatividad",
@@ -63,15 +72,31 @@ const MyPrompts = () => {
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [sortOption, setSortOption] = useState<SortOption>("date-desc");
 
-  const filteredPrompts = prompts.filter((prompt) => {
-    const matchesSearch = prompt.prompt_text
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      filterCategory === "all" || prompt.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredAndSortedPrompts = prompts
+    .filter((prompt) => {
+      const matchesSearch = prompt.prompt_text
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        filterCategory === "all" || prompt.category === filterCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      switch (sortOption) {
+        case "date-desc":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "date-asc":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "category-asc":
+          return a.category.localeCompare(b.category);
+        case "category-desc":
+          return b.category.localeCompare(a.category);
+        default:
+          return 0;
+      }
+    });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -238,6 +263,19 @@ const MyPrompts = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+              <SelectTrigger className="w-full sm:w-[160px] bg-background">
+                <ArrowUpDown className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Ordenar" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                {SORT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
@@ -253,7 +291,7 @@ const MyPrompts = () => {
               </Button>
             </CardContent>
           </Card>
-        ) : filteredPrompts.length === 0 ? (
+        ) : filteredAndSortedPrompts.length === 0 ? (
           <Card className="border shadow-sm">
             <CardContent className="py-8 text-center">
               <p className="text-muted-foreground">
@@ -263,7 +301,7 @@ const MyPrompts = () => {
           </Card>
         ) : (
           <div className="space-y-3">
-            {filteredPrompts.map((prompt) => (
+            {filteredAndSortedPrompts.map((prompt) => (
               <Card key={prompt.id} className="border shadow-sm">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
