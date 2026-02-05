@@ -23,9 +23,10 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { CheckCircle2, LogIn, List, Plus, BookOpen } from "lucide-react";
+import { CheckCircle2, LogIn, List, Plus, BookOpen, Wand2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link } from "react-router-dom";
+import { GeneratePromptDialog } from "@/components/GeneratePromptDialog";
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
@@ -38,6 +39,18 @@ const Index = () => {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+
+  const handleUseGeneratedPrompt = (generatedPrompt: string, suggestedCategory: string) => {
+    setPromptText(generatedPrompt);
+    // Try to match the suggested category
+    const matchedCategory = categories.find(
+      (cat) => cat.toLowerCase() === suggestedCategory.toLowerCase()
+    );
+    if (matchedCategory) {
+      setCategory(matchedCategory);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,9 +196,21 @@ const Index = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="prompt" className="text-foreground">
-                  Prompt
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="prompt" className="text-foreground">
+                    Prompt
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowGenerateDialog(true)}
+                    className="text-primary h-auto py-1 px-2"
+                  >
+                    <Wand2 className="mr-1 h-3 w-3" />
+                    Generar con IA
+                  </Button>
+                </div>
                 <Textarea
                   id="prompt"
                   placeholder="Escribe tu prompt aquí..."
@@ -262,6 +287,13 @@ const Index = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Generate Prompt Dialog */}
+      <GeneratePromptDialog
+        open={showGenerateDialog}
+        onOpenChange={setShowGenerateDialog}
+        onUsePrompt={handleUseGeneratedPrompt}
+      />
     </div>
   );
 };
