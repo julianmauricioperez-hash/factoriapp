@@ -142,6 +142,29 @@ const MyPrompts = () => {
     }
   };
 
+  const handlePromptUpdate = async (promptId: string, newText: string) => {
+    try {
+      const { error } = await supabase
+        .from("prompts")
+        .update({ prompt_text: newText })
+        .eq("id", promptId);
+
+      if (error) throw error;
+
+      setPrompts(
+        prompts.map((p) =>
+          p.id === promptId ? { ...p, prompt_text: newText } : p
+        )
+      );
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el prompt.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleShareUpdate = (promptId: string, isPublic: boolean, slug: string | null) => {
     setPrompts(
       prompts.map((p) =>
@@ -437,6 +460,7 @@ const MyPrompts = () => {
                   onDelete={setDeletingPrompt}
                   onToggleFavorite={toggleFavorite}
                   onShareUpdate={handleShareUpdate}
+                  onPromptUpdate={handlePromptUpdate}
                 />
               ))}
             </div>

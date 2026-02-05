@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Star, Copy, Check, Braces, Share2 } from "lucide-react";
+import { Pencil, Trash2, Star, Copy, Check, Braces, Share2, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { VariableDialog, hasVariables } from "./VariableDialog";
 import { SharePromptDialog } from "./SharePromptDialog";
+import { ImprovePromptDialog } from "./ImprovePromptDialog";
 
 interface Prompt {
   id: string;
@@ -22,18 +23,26 @@ interface PromptCardProps {
   onDelete: (prompt: Prompt) => void;
   onToggleFavorite: (prompt: Prompt) => void;
   onShareUpdate?: (promptId: string, isPublic: boolean, slug: string | null) => void;
+  onPromptUpdate?: (promptId: string, newText: string) => void;
 }
 
-export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShareUpdate }: PromptCardProps) => {
+export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShareUpdate, onPromptUpdate }: PromptCardProps) => {
   const [copied, setCopied] = useState(false);
   const [showVariableDialog, setShowVariableDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showImproveDialog, setShowImproveDialog] = useState(false);
 
   const promptHasVars = hasVariables(prompt.prompt_text);
   
   const handleShareUpdate = (isPublic: boolean, slug: string | null) => {
     if (onShareUpdate) {
       onShareUpdate(prompt.id, isPublic, slug);
+    }
+  };
+
+  const handleApplyImprovement = (improvedText: string) => {
+    if (onPromptUpdate) {
+      onPromptUpdate(prompt.id, improvedText);
     }
   };
 
@@ -100,6 +109,15 @@ export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShare
               </p>
             </div>
             <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowImproveDialog(true)}
+                title="Mejorar con IA"
+              >
+                <Sparkles className="h-4 w-4 text-primary" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -175,6 +193,14 @@ export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShare
         isPublic={prompt.is_public || false}
         publicSlug={prompt.public_slug || null}
         onUpdate={handleShareUpdate}
+      />
+
+      <ImprovePromptDialog
+        open={showImproveDialog}
+        onOpenChange={setShowImproveDialog}
+        promptText={prompt.prompt_text}
+        category={prompt.category}
+        onApplyImprovement={onPromptUpdate ? handleApplyImprovement : undefined}
       />
     </>
   );
