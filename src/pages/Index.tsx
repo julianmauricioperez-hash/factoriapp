@@ -15,6 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CheckCircle2, LogIn, List } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const CATEGORIES = [
   "Creatividad",
@@ -94,7 +95,8 @@ const Index = () => {
             <CardTitle className="text-xl font-medium text-foreground">
               Registrar Prompt
             </CardTitle>
-            <div className="flex gap-2">
+            <div className="flex gap-1">
+              <ThemeToggle />
               {!authLoading && (
                 user ? (
                   <Button variant="ghost" size="sm" onClick={() => navigate("/my-prompts")}>

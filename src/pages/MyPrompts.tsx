@@ -33,7 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown, Copy, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState as useStateReact } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type SortOption = "date-desc" | "date-asc" | "category-asc" | "category-desc";
 
@@ -249,6 +249,7 @@ const MyPrompts = () => {
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-foreground">Mis Prompts</h1>
           <div className="flex gap-2">
+            <ThemeToggle />
             <Button variant="outline" size="sm" onClick={() => navigate("/")}>
               <Plus className="mr-1 h-4 w-4" />
               Nuevo
