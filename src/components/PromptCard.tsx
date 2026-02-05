@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Star, Copy, Check, Braces } from "lucide-react";
+import { Pencil, Trash2, Star, Copy, Check, Braces, Share2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { VariableDialog, hasVariables } from "./VariableDialog";
+import { SharePromptDialog } from "./SharePromptDialog";
 
 interface Prompt {
   id: string;
@@ -11,6 +12,8 @@ interface Prompt {
   prompt_text: string;
   created_at: string;
   is_favorite: boolean;
+  is_public?: boolean;
+  public_slug?: string | null;
 }
 
 interface PromptCardProps {
@@ -18,13 +21,21 @@ interface PromptCardProps {
   onEdit: (prompt: Prompt) => void;
   onDelete: (prompt: Prompt) => void;
   onToggleFavorite: (prompt: Prompt) => void;
+  onShareUpdate?: (promptId: string, isPublic: boolean, slug: string | null) => void;
 }
 
-export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite }: PromptCardProps) => {
+export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShareUpdate }: PromptCardProps) => {
   const [copied, setCopied] = useState(false);
   const [showVariableDialog, setShowVariableDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   const promptHasVars = hasVariables(prompt.prompt_text);
+  
+  const handleShareUpdate = (isPublic: boolean, slug: string | null) => {
+    if (onShareUpdate) {
+      onShareUpdate(prompt.id, isPublic, slug);
+    }
+  };
 
   const handleCopy = async () => {
     if (promptHasVars) {
@@ -93,6 +104,15 @@ export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite }: Promp
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
+                onClick={() => setShowShareDialog(true)}
+                title={prompt.is_public ? "Compartido públicamente" : "Compartir"}
+              >
+                <Share2 className={`h-4 w-4 ${prompt.is_public ? "text-primary" : ""}`} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
                 onClick={() => onToggleFavorite(prompt)}
               >
                 <Star
@@ -146,6 +166,15 @@ export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite }: Promp
         open={showVariableDialog}
         onOpenChange={setShowVariableDialog}
         promptText={prompt.prompt_text}
+      />
+
+      <SharePromptDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        promptId={prompt.id}
+        isPublic={prompt.is_public || false}
+        publicSlug={prompt.public_slug || null}
+        onUpdate={handleShareUpdate}
       />
     </>
   );

@@ -32,7 +32,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { Plus, LogOut, Search, X, ArrowUpDown, Download, ChevronLeft, ChevronRight, Star, FolderOpen, BarChart3 } from "lucide-react";
+import { Plus, LogOut, Search, X, ArrowUpDown, Download, ChevronLeft, ChevronRight, Star, FolderOpen, BarChart3, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PromptCard } from "@/components/PromptCard";
@@ -59,6 +59,8 @@ interface Prompt {
   prompt_text: string;
   created_at: string;
   is_favorite: boolean;
+  is_public?: boolean;
+  public_slug?: string | null;
 }
 
 
@@ -138,6 +140,14 @@ const MyPrompts = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleShareUpdate = (promptId: string, isPublic: boolean, slug: string | null) => {
+    setPrompts(
+      prompts.map((p) =>
+        p.id === promptId ? { ...p, is_public: isPublic, public_slug: slug } : p
+      )
+    );
   };
 
   useEffect(() => {
@@ -324,6 +334,10 @@ const MyPrompts = () => {
               <FolderOpen className="mr-1 h-4 w-4" />
               Colecciones
             </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/library")}>
+              <BookOpen className="mr-1 h-4 w-4" />
+              Biblioteca
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate("/")}>
               <Plus className="mr-1 h-4 w-4" />
               Nuevo
@@ -422,6 +436,7 @@ const MyPrompts = () => {
                   onEdit={handleEdit}
                   onDelete={setDeletingPrompt}
                   onToggleFavorite={toggleFavorite}
+                  onShareUpdate={handleShareUpdate}
                 />
               ))}
             </div>

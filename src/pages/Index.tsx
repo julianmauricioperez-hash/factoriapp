@@ -23,8 +23,9 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { CheckCircle2, LogIn, List, Plus } from "lucide-react";
+import { CheckCircle2, LogIn, List, Plus, BookOpen } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
@@ -210,6 +211,15 @@ const Index = () => {
                   {" "}para guardar y gestionar tus prompts
                 </p>
               )}
+
+              <div className="pt-2 border-t">
+                <Link to="/library">
+                  <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
+                    <BookOpen className="mr-1 h-4 w-4" />
+                    Explorar biblioteca pública
+                  </Button>
+                </Link>
+              </div>
             </form>
           )}
         </CardContent>
