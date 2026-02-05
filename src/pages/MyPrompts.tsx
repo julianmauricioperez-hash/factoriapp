@@ -32,7 +32,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown, Copy, Check, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown, Copy, Check, Download, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -57,6 +57,7 @@ interface Prompt {
   category: string;
   prompt_text: string;
   created_at: string;
+  is_favorite: boolean;
 }
 
 const CopyButton = ({ text }: { text: string }) => {
@@ -102,6 +103,7 @@ const MyPrompts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [sortOption, setSortOption] = useState<SortOption>("date-desc");
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -112,7 +114,8 @@ const MyPrompts = () => {
         .includes(searchQuery.toLowerCase());
       const matchesCategory =
         filterCategory === "all" || prompt.category === filterCategory;
-      return matchesSearch && matchesCategory;
+      const matchesFavorite = !showFavoritesOnly || prompt.is_favorite;
+      return matchesSearch && matchesCategory && matchesFavorite;
     })
     .sort((a, b) => {
       switch (sortOption) {
@@ -138,7 +141,31 @@ const MyPrompts = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterCategory, sortOption]);
+  }, [searchQuery, filterCategory, sortOption, showFavoritesOnly]);
+
+  const toggleFavorite = async (prompt: Prompt) => {
+    const newValue = !prompt.is_favorite;
+    try {
+      const { error } = await supabase
+        .from("prompts")
+        .update({ is_favorite: newValue })
+        .eq("id", prompt.id);
+
+      if (error) throw error;
+
+      setPrompts(
+        prompts.map((p) =>
+          p.id === prompt.id ? { ...p, is_favorite: newValue } : p
+        )
+      );
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el favorito.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -347,6 +374,14 @@ const MyPrompts = () => {
                 </button>
               )}
             </div>
+            <Button
+              variant={showFavoritesOnly ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className="shrink-0"
+            >
+              <Star className={`h-4 w-4 ${showFavoritesOnly ? "fill-current" : ""}`} />
+            </Button>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger className="w-full sm:w-[180px] bg-background">
                 <SelectValue placeholder="Filtrar por categoría" />
@@ -416,6 +451,20 @@ const MyPrompts = () => {
                         </p>
                       </div>
                       <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => toggleFavorite(prompt)}
+                        >
+                          <Star
+                            className={`h-4 w-4 ${
+                              prompt.is_favorite
+                                ? "fill-yellow-400 text-yellow-400"
+                                : ""
+                            }`}
+                          />
+                        </Button>
                         <CopyButton text={prompt.prompt_text} />
                         <Button
                           variant="ghost"
