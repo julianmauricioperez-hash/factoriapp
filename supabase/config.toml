@@ -2,6 +2,3 @@ project_id = "ptgxyjnevzzeynkbudic"
 
 [functions.improve-prompt]
 verify_jwt = false
-
-[functions.generate-prompt]
-verify_jwt = false
