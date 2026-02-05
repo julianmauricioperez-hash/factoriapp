@@ -32,9 +32,10 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown, Copy, Check, Download, ChevronLeft, ChevronRight, Star, FolderOpen } from "lucide-react";
+import { Plus, LogOut, Search, X, ArrowUpDown, Download, ChevronLeft, ChevronRight, Star, FolderOpen, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PromptCard } from "@/components/PromptCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,34 +61,6 @@ interface Prompt {
   is_favorite: boolean;
 }
 
-const CopyButton = ({ text }: { text: string }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast({
-      title: "¡Copiado!",
-      description: "El prompt se copió al portapapeles.",
-    });
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8"
-      onClick={handleCopy}
-    >
-      {copied ? (
-        <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-      ) : (
-        <Copy className="h-4 w-4" />
-      )}
-    </Button>
-  );
-};
 
 const MyPrompts = () => {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -343,6 +316,10 @@ const MyPrompts = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            <Button variant="outline" size="sm" onClick={() => navigate("/statistics")}>
+              <BarChart3 className="mr-1 h-4 w-4" />
+              Stats
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate("/collections")}>
               <FolderOpen className="mr-1 h-4 w-4" />
               Colecciones
@@ -439,62 +416,13 @@ const MyPrompts = () => {
           <>
             <div className="space-y-3">
               {paginatedPrompts.map((prompt) => (
-                <Card key={prompt.id} className="border shadow-sm">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="inline-block rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                          {prompt.category}
-                        </span>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {new Date(prompt.created_at).toLocaleDateString("es-ES", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </p>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => toggleFavorite(prompt)}
-                        >
-                          <Star
-                            className={`h-4 w-4 ${
-                              prompt.is_favorite
-                                ? "fill-yellow-400 text-yellow-400"
-                                : ""
-                            }`}
-                          />
-                        </Button>
-                        <CopyButton text={prompt.prompt_text} />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleEdit(prompt)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => setDeletingPrompt(prompt)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">
-                      {prompt.prompt_text}
-                    </p>
-                  </CardContent>
-                </Card>
+                <PromptCard
+                  key={prompt.id}
+                  prompt={prompt}
+                  onEdit={handleEdit}
+                  onDelete={setDeletingPrompt}
+                  onToggleFavorite={toggleFavorite}
+                />
               ))}
             </div>
 
