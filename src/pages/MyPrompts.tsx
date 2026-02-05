@@ -31,6 +31,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCategories } from "@/hooks/useCategories";
 import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown, Copy, Check, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -50,15 +51,6 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "category-desc", label: "Categoría (Z-A)" },
 ];
 
-const CATEGORIES = [
-  "Creatividad",
-  "Código / Programación",
-  "Escritura",
-  "Marketing",
-  "Educación",
-  "Análisis de datos",
-  "Otra",
-];
 
 interface Prompt {
   id: string;
@@ -98,6 +90,7 @@ const CopyButton = ({ text }: { text: string }) => {
 
 const MyPrompts = () => {
   const { user, signOut, loading: authLoading } = useAuth();
+  const { categories } = useCategories();
   const navigate = useNavigate();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -347,7 +340,7 @@ const MyPrompts = () => {
               </SelectTrigger>
               <SelectContent className="bg-popover">
                 <SelectItem value="all">Todas las categorías</SelectItem>
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}
                   </SelectItem>
@@ -453,7 +446,7 @@ const MyPrompts = () => {
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
-                    {CATEGORIES.map((cat) => (
+                    {categories.map((cat) => (
                       <SelectItem key={cat} value={cat}>
                         {cat}
                       </SelectItem>
