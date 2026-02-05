@@ -35,9 +35,34 @@ export type Database = {
         }
         Relationships: []
       }
+      collections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       prompts: {
         Row: {
           category: string
+          collection_id: string | null
           created_at: string
           id: string
           is_favorite: boolean
@@ -46,6 +71,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          collection_id?: string | null
           created_at?: string
           id?: string
           is_favorite?: boolean
@@ -54,13 +80,22 @@ export type Database = {
         }
         Update: {
           category?: string
+          collection_id?: string | null
           created_at?: string
           id?: string
           is_favorite?: boolean
           prompt_text?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prompts_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

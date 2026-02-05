@@ -32,7 +32,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown, Copy, Check, Download, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { Pencil, Trash2, Plus, LogOut, Search, X, ArrowUpDown, Copy, Check, Download, ChevronLeft, ChevronRight, Star, FolderOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -343,6 +343,10 @@ const MyPrompts = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            <Button variant="outline" size="sm" onClick={() => navigate("/collections")}>
+              <FolderOpen className="mr-1 h-4 w-4" />
+              Colecciones
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate("/")}>
               <Plus className="mr-1 h-4 w-4" />
               Nuevo
