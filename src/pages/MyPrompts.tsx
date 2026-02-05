@@ -31,7 +31,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Trash2, Plus, LogOut } from "lucide-react";
+import { Pencil, Trash2, Plus, LogOut, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const CATEGORIES = [
   "Creatividad",
@@ -60,6 +61,17 @@ const MyPrompts = () => {
   const [editCategory, setEditCategory] = useState("");
   const [editText, setEditText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+
+  const filteredPrompts = prompts.filter((prompt) => {
+    const matchesSearch = prompt.prompt_text
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      filterCategory === "all" || prompt.category === filterCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -193,6 +205,42 @@ const MyPrompts = () => {
           </div>
         </div>
 
+        {/* Search and Filter Controls */}
+        {prompts.length > 0 && (
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar en tus prompts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9 bg-background"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-full sm:w-[180px] bg-background">
+                <SelectValue placeholder="Filtrar por categoría" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                <SelectItem value="all">Todas las categorías</SelectItem>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {prompts.length === 0 ? (
           <Card className="border shadow-sm">
             <CardContent className="py-12 text-center">
@@ -205,9 +253,17 @@ const MyPrompts = () => {
               </Button>
             </CardContent>
           </Card>
+        ) : filteredPrompts.length === 0 ? (
+          <Card className="border shadow-sm">
+            <CardContent className="py-8 text-center">
+              <p className="text-muted-foreground">
+                No se encontraron prompts con esos filtros.
+              </p>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-3">
-            {prompts.map((prompt) => (
+            {filteredPrompts.map((prompt) => (
               <Card key={prompt.id} className="border shadow-sm">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
