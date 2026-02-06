@@ -32,7 +32,8 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { Plus, Search, X, ArrowUpDown, Download, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { useCollections } from "@/hooks/useCollections";
+import { Plus, Search, X, ArrowUpDown, Download, ChevronLeft, ChevronRight, Star, FolderOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PromptCard } from "@/components/PromptCard";
 import { AppLayout } from "@/components/AppLayout";
@@ -60,11 +61,13 @@ interface Prompt {
   is_favorite: boolean;
   is_public?: boolean;
   public_slug?: string | null;
+  collection_id?: string | null;
 }
 
 const MyPrompts = () => {
   const { user, loading: authLoading } = useAuth();
   const { categories } = useCategories();
+  const { collections } = useCollections();
   const navigate = useNavigate();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +78,7 @@ const MyPrompts = () => {
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterCollection, setFilterCollection] = useState<string>("all");
   const [sortOption, setSortOption] = useState<SortOption>("date-desc");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,8 +91,12 @@ const MyPrompts = () => {
         .includes(searchQuery.toLowerCase());
       const matchesCategory =
         filterCategory === "all" || prompt.category === filterCategory;
+      const matchesCollection =
+        filterCollection === "all" || 
+        (filterCollection === "none" && !prompt.collection_id) ||
+        prompt.collection_id === filterCollection;
       const matchesFavorite = !showFavoritesOnly || prompt.is_favorite;
-      return matchesSearch && matchesCategory && matchesFavorite;
+      return matchesSearch && matchesCategory && matchesCollection && matchesFavorite;
     })
     .sort((a, b) => {
       switch (sortOption) {
@@ -113,7 +121,7 @@ const MyPrompts = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterCategory, sortOption, showFavoritesOnly]);
+  }, [searchQuery, filterCategory, filterCollection, sortOption, showFavoritesOnly]);
 
   const toggleFavorite = async (prompt: Prompt) => {
     const newValue = !prompt.is_favorite;
@@ -166,6 +174,14 @@ const MyPrompts = () => {
     setPrompts(
       prompts.map((p) =>
         p.id === promptId ? { ...p, is_public: isPublic, public_slug: slug } : p
+      )
+    );
+  };
+
+  const handleCollectionUpdate = (promptId: string, collectionId: string | null) => {
+    setPrompts(
+      prompts.map((p) =>
+        p.id === promptId ? { ...p, collection_id: collectionId } : p
       )
     );
   };
@@ -393,6 +409,25 @@ const MyPrompts = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={filterCollection} onValueChange={setFilterCollection}>
+                <SelectTrigger className="flex-1 bg-background">
+                  <FolderOpen className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Colección" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="none">Sin colección</SelectItem>
+                  {collections.map((col) => (
+                    <SelectItem key={col.id} value={col.id}>
+                      {col.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort Row */}
+            <div className="flex gap-2">
               <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
                 <SelectTrigger className="flex-1 bg-background">
                   <ArrowUpDown className="mr-2 h-4 w-4" />
@@ -442,6 +477,8 @@ const MyPrompts = () => {
                   onToggleFavorite={toggleFavorite}
                   onShareUpdate={handleShareUpdate}
                   onPromptUpdate={handlePromptUpdate}
+                  onCollectionUpdate={handleCollectionUpdate}
+                  collections={collections}
                 />
               ))}
             </div>
