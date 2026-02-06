@@ -13,6 +13,7 @@ import {
   LogOut,
   Plus,
   MessageSquare,
+  Tag,
 } from "lucide-react";
 
 interface AppHeaderProps {
@@ -85,6 +86,14 @@ export function AppHeader({ title, showBackButton }: AppHeaderProps) {
                 >
                   <FolderOpen className="mr-1 h-4 w-4" />
                   Colecciones
+                </Button>
+                <Button
+                  variant={isActive("/tags") ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => navigate("/tags")}
+                >
+                  <Tag className="mr-1 h-4 w-4" />
+                  Etiquetas
                 </Button>
                 <Button
                   variant={isActive("/statistics") ? "secondary" : "ghost"}
