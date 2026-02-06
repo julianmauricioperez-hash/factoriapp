@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Home, List, FolderOpen, BookOpen, Plus } from "lucide-react";
+import { Home, List, FolderOpen, BookOpen, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -13,7 +13,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Inicio", icon: Home, path: "/" },
   { label: "Prompts", icon: List, path: "/my-prompts", requiresAuth: true },
-  { label: "Nuevo", icon: Plus, path: "/" }, // Center action button
+  { label: "Chat IA", icon: MessageSquare, path: "/chat", requiresAuth: true },
   { label: "Colecciones", icon: FolderOpen, path: "/collections", requiresAuth: true },
   { label: "Biblioteca", icon: BookOpen, path: "/library" },
 ];
@@ -23,9 +23,7 @@ export function BottomNav() {
   const location = useLocation();
   const { user } = useAuth();
 
-  const isActive = (path: string, index: number) => {
-    // The center button (index 2) should never show as active
-    if (index === 2) return false;
+  const isActive = (path: string) => {
     return location.pathname === path;
   };
 
@@ -43,20 +41,7 @@ export function BottomNav() {
       <div className="flex h-16 items-center justify-around px-2">
         {navItems.map((item, index) => {
           const Icon = item.icon;
-          const active = isActive(item.path, index);
-          const isCenterButton = index === 2;
-
-          if (isCenterButton) {
-            return (
-              <button
-                key={item.path + index}
-                onClick={() => handleNavigate(item, index)}
-                className="flex h-12 w-12 -mt-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95"
-              >
-                <Icon className="h-6 w-6" />
-              </button>
-            );
-          }
+          const active = isActive(item.path);
 
           return (
             <button
