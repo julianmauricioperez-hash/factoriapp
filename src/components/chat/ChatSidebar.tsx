@@ -168,6 +168,13 @@ export function ChatSidebar({
             )}
           </div>
           
+          {/* Results counter */}
+          {(searchQuery || selectedFilterTags.length > 0) && (
+            <p className="text-[11px] text-muted-foreground px-0.5">
+              {filteredConversations.length} de {conversations.length} conversación{conversations.length !== 1 ? "es" : ""}
+            </p>
+          )}
+          
           {/* Tag filter */}
           <div className="flex items-center gap-1">
             <Popover open={filterOpen} onOpenChange={setFilterOpen}>
