@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, MessageSquare, Trash2, Pencil, Check, X, Filter, Tag as TagIcon, Search } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Pencil, Check, X, Filter, Tag as TagIcon, Search, Star, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatConversation } from "@/hooks/useChatConversations";
 import { ChatTagsInput } from "./ChatTagsInput";
@@ -28,6 +35,8 @@ interface Tag {
   name: string;
 }
 
+type SortOption = "recent" | "oldest" | "alphabetical" | "favorites";
+
 interface ChatSidebarProps {
   conversations: ChatConversation[];
   selectedId: string | null;
@@ -35,6 +44,7 @@ interface ChatSidebarProps {
   onNew: () => void;
   onDelete: (id: string) => void;
   onRename: (id: string, newTitle: string) => void;
+  onToggleFavorite: (id: string) => void;
   loading: boolean;
   // Tags props
   availableTags: Tag[];
@@ -51,6 +61,7 @@ export function ChatSidebar({
   onNew,
   onDelete,
   onRename,
+  onToggleFavorite,
   loading,
   availableTags,
   getTagsForChat,
@@ -65,10 +76,11 @@ export function ChatSidebar({
   const [selectedFilterTags, setSelectedFilterTags] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState<SortOption>("recent");
 
-  // Filter conversations by search query and selected tags
+  // Filter and sort conversations
   const filteredConversations = useMemo(() => {
-    let result = conversations;
+    let result = [...conversations];
     
     // Filter by search query
     if (searchQuery.trim()) {
@@ -88,8 +100,29 @@ export function ChatSidebar({
       });
     }
     
+    // Sort
+    switch (sortOption) {
+      case "recent":
+        result.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+        break;
+      case "oldest":
+        result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      case "alphabetical":
+        result.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "favorites":
+        result.sort((a, b) => {
+          if (a.is_favorite === b.is_favorite) {
+            return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+          }
+          return a.is_favorite ? -1 : 1;
+        });
+        break;
+    }
+    
     return result;
-  }, [conversations, searchQuery, selectedFilterTags, getTagsForChat]);
+  }, [conversations, searchQuery, selectedFilterTags, sortOption, getTagsForChat]);
 
   const toggleFilterTag = (tagId: string) => {
     setSelectedFilterTags((prev) =>
@@ -238,6 +271,20 @@ export function ChatSidebar({
             )}
           </div>
           
+          {/* Sort selector */}
+          <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+            <SelectTrigger className="h-8 text-xs">
+              <ArrowUpDown className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Más recientes</SelectItem>
+              <SelectItem value="oldest">Más antiguas</SelectItem>
+              <SelectItem value="alphabetical">Alfabético</SelectItem>
+              <SelectItem value="favorites">Favoritos primero</SelectItem>
+            </SelectContent>
+          </Select>
+          
           {/* Active filter badges */}
           {selectedFilterTags.length > 0 && (
             <div className="flex flex-wrap gap-1">
@@ -318,8 +365,23 @@ export function ChatSidebar({
                       </div>
                     ) : (
                       <div className="flex-1 flex items-center gap-1 min-w-0 overflow-hidden">
+                        {conv.is_favorite && (
+                          <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                        )}
                         <span className="truncate text-sm flex-1">{conv.title}</span>
                         <div className="flex items-center flex-shrink-0 ml-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleFavorite(conv.id);
+                            }}
+                            aria-label={conv.is_favorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                          >
+                            <Star className={cn("h-3 w-3", conv.is_favorite ? "text-yellow-500 fill-yellow-500" : "")} />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"

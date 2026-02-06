@@ -13,6 +13,7 @@ export interface ChatMessage {
 export interface ChatConversation {
   id: string;
   title: string;
+  is_favorite: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -85,6 +86,28 @@ export function useChatConversations() {
     }
   };
 
+  const toggleFavorite = async (id: string) => {
+    const conversation = conversations.find(c => c.id === id);
+    if (!conversation) return;
+
+    const newValue = !conversation.is_favorite;
+    
+    try {
+      const { error } = await supabase
+        .from("chat_conversations")
+        .update({ is_favorite: newValue })
+        .eq("id", id);
+
+      if (error) throw error;
+      
+      setConversations(prev => 
+        prev.map(c => c.id === id ? { ...c, is_favorite: newValue } : c)
+      );
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    }
+  };
+
   const deleteConversation = async (id: string) => {
     try {
       const { error } = await supabase
@@ -154,6 +177,7 @@ export function useChatConversations() {
     loading,
     createConversation,
     updateConversationTitle,
+    toggleFavorite,
     deleteConversation,
     getMessages,
     addMessage,
