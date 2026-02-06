@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Star, Copy, Check, Braces, Share2, Sparkles } from "lucide-react";
+import { Pencil, Trash2, Star, Copy, Check, Braces, Share2, Sparkles, FolderOpen } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { VariableDialog, hasVariables } from "./VariableDialog";
 import { SharePromptDialog } from "./SharePromptDialog";
 import { ImprovePromptDialog } from "./ImprovePromptDialog";
+import { CollectionDialog } from "./CollectionDialog";
+
+interface Collection {
+  id: string;
+  name: string;
+  description: string | null;
+}
 
 interface Prompt {
   id: string;
@@ -15,6 +22,7 @@ interface Prompt {
   is_favorite: boolean;
   is_public?: boolean;
   public_slug?: string | null;
+  collection_id?: string | null;
 }
 
 interface PromptCardProps {
@@ -24,15 +32,28 @@ interface PromptCardProps {
   onToggleFavorite: (prompt: Prompt) => void;
   onShareUpdate?: (promptId: string, isPublic: boolean, slug: string | null) => void;
   onPromptUpdate?: (promptId: string, newText: string) => void;
+  onCollectionUpdate?: (promptId: string, collectionId: string | null) => void;
+  collections?: Collection[];
 }
 
-export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShareUpdate, onPromptUpdate }: PromptCardProps) => {
+export const PromptCard = ({ 
+  prompt, 
+  onEdit, 
+  onDelete, 
+  onToggleFavorite, 
+  onShareUpdate, 
+  onPromptUpdate,
+  onCollectionUpdate,
+  collections = []
+}: PromptCardProps) => {
   const [copied, setCopied] = useState(false);
   const [showVariableDialog, setShowVariableDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showImproveDialog, setShowImproveDialog] = useState(false);
+  const [showCollectionDialog, setShowCollectionDialog] = useState(false);
 
   const promptHasVars = hasVariables(prompt.prompt_text);
+  const currentCollection = collections.find(c => c.id === prompt.collection_id);
   
   const handleShareUpdate = (isPublic: boolean, slug: string | null) => {
     if (onShareUpdate) {
@@ -43,6 +64,12 @@ export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShare
   const handleApplyImprovement = (improvedText: string) => {
     if (onPromptUpdate) {
       onPromptUpdate(prompt.id, improvedText);
+    }
+  };
+
+  const handleCollectionUpdate = (collectionId: string | null) => {
+    if (onCollectionUpdate) {
+      onCollectionUpdate(prompt.id, collectionId);
     }
   };
 
@@ -87,12 +114,18 @@ export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShare
     <>
       <Card className="border shadow-sm">
         <CardHeader className="pb-2">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-block rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
                   {prompt.category}
                 </span>
+                {currentCollection && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    <FolderOpen className="h-3 w-3" />
+                    {currentCollection.name}
+                  </span>
+                )}
                 {promptHasVars && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                     <Braces className="h-3 w-3" />
@@ -108,7 +141,7 @@ export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShare
                 })}
               </p>
             </div>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap justify-end gap-1">
               <Button
                 variant="ghost"
                 size="icon"
@@ -117,6 +150,15 @@ export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShare
                 title="Mejorar con IA"
               >
                 <Sparkles className="h-4 w-4 text-primary" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowCollectionDialog(true)}
+                title={currentCollection ? `En: ${currentCollection.name}` : "Mover a colección"}
+              >
+                <FolderOpen className={`h-4 w-4 ${currentCollection ? "text-primary" : ""}`} />
               </Button>
               <Button
                 variant="ghost"
@@ -201,6 +243,15 @@ export const PromptCard = ({ prompt, onEdit, onDelete, onToggleFavorite, onShare
         promptText={prompt.prompt_text}
         category={prompt.category}
         onApplyImprovement={onPromptUpdate ? handleApplyImprovement : undefined}
+      />
+
+      <CollectionDialog
+        open={showCollectionDialog}
+        onOpenChange={setShowCollectionDialog}
+        promptId={prompt.id}
+        currentCollectionId={prompt.collection_id || null}
+        collections={collections}
+        onUpdate={handleCollectionUpdate}
       />
     </>
   );
