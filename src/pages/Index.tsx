@@ -23,9 +23,10 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { CheckCircle2, Plus, Sparkles } from "lucide-react";
+import { CheckCircle2, Plus, Sparkles, FileText } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { ImprovePromptDialog } from "@/components/ImprovePromptDialog";
+import { PromptTemplates } from "@/components/PromptTemplates";
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
@@ -39,6 +40,16 @@ const Index = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
   const [showImproveDialog, setShowImproveDialog] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const handleSelectTemplate = (templateCategory: string, templatePrompt: string) => {
+    // Check if the template category exists in user categories
+    const categoryExists = categories.includes(templateCategory);
+    if (categoryExists) {
+      setCategory(templateCategory);
+    }
+    setPromptText(templatePrompt);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,8 +132,17 @@ const Index = () => {
       <div className="flex items-center justify-center py-4 md:py-8">
         <Card className="w-full max-w-md shadow-sm border">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-medium text-foreground">
+            <CardTitle className="text-xl font-medium text-foreground flex items-center justify-between">
               Registrar Prompt
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTemplates(true)}
+                className="text-xs gap-1"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Plantillas
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -287,6 +307,13 @@ const Index = () => {
         promptText={promptText}
         category={category || "General"}
         onApplyImprovement={(improvedText) => setPromptText(improvedText)}
+      />
+
+      {/* Templates Dialog */}
+      <PromptTemplates
+        open={showTemplates}
+        onOpenChange={setShowTemplates}
+        onSelectTemplate={handleSelectTemplate}
       />
     </AppLayout>
   );
