@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, MessageSquare, Trash2, Pencil, Check, X, Filter, Tag as TagIcon } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Pencil, Check, X, Filter, Tag as TagIcon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -64,18 +64,32 @@ export function ChatSidebar({
   const [editingTitle, setEditingTitle] = useState("");
   const [selectedFilterTags, setSelectedFilterTags] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter conversations by selected tags
+  // Filter conversations by search query and selected tags
   const filteredConversations = useMemo(() => {
-    if (selectedFilterTags.length === 0) return conversations;
+    let result = conversations;
     
-    return conversations.filter((conv) => {
-      const chatTags = getTagsForChat(conv.id);
-      return selectedFilterTags.every((tagId) =>
-        chatTags.some((t) => t.id === tagId)
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((conv) =>
+        conv.title.toLowerCase().includes(query)
       );
-    });
-  }, [conversations, selectedFilterTags, getTagsForChat]);
+    }
+    
+    // Filter by selected tags
+    if (selectedFilterTags.length > 0) {
+      result = result.filter((conv) => {
+        const chatTags = getTagsForChat(conv.id);
+        return selectedFilterTags.every((tagId) =>
+          chatTags.some((t) => t.id === tagId)
+        );
+      });
+    }
+    
+    return result;
+  }, [conversations, searchQuery, selectedFilterTags, getTagsForChat]);
 
   const toggleFilterTag = (tagId: string) => {
     setSelectedFilterTags((prev) =>
@@ -132,6 +146,17 @@ export function ChatSidebar({
             <Plus className="h-4 w-4" />
             Nuevo chat
           </Button>
+          
+          {/* Search input */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar conversaciones..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 pl-8 text-xs"
+            />
+          </div>
           
           {/* Tag filter */}
           <div className="flex items-center gap-1">
