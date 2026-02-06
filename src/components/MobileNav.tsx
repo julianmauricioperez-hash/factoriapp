@@ -20,6 +20,7 @@ import {
   LogIn,
   LogOut,
   Plus,
+  MessageSquare,
 } from "lucide-react";
 
 interface NavItem {
@@ -33,6 +34,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Inicio", icon: <Home className="h-5 w-5" />, path: "/" },
   { label: "Mis Prompts", icon: <List className="h-5 w-5" />, path: "/my-prompts", requiresAuth: true },
+  { label: "Chat IA", icon: <MessageSquare className="h-5 w-5" />, path: "/chat", requiresAuth: true },
   { label: "Colecciones", icon: <FolderOpen className="h-5 w-5" />, path: "/collections", requiresAuth: true },
   { label: "Estadísticas", icon: <BarChart3 className="h-5 w-5" />, path: "/statistics", requiresAuth: true },
   { label: "Biblioteca", icon: <BookOpen className="h-5 w-5" />, path: "/library" },

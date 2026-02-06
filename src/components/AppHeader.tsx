@@ -12,6 +12,7 @@ import {
   LogIn,
   LogOut,
   Plus,
+  MessageSquare,
 } from "lucide-react";
 
 interface AppHeaderProps {
@@ -68,6 +69,14 @@ export function AppHeader({ title, showBackButton }: AppHeaderProps) {
                 >
                   <List className="mr-1 h-4 w-4" />
                   Mis Prompts
+                </Button>
+                <Button
+                  variant={isActive("/chat") ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => navigate("/chat")}
+                >
+                  <MessageSquare className="mr-1 h-4 w-4" />
+                  Chat IA
                 </Button>
                 <Button
                   variant={isActive("/collections") ? "secondary" : "ghost"}
