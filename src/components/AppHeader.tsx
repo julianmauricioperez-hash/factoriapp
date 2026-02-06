@@ -38,7 +38,7 @@ export function AppHeader({ title, showBackButton }: AppHeaderProps) {
         <div className="flex items-center gap-2">
           <MobileNav />
           <h1 className="text-lg font-semibold md:hidden">
-            {title || "Alimentaria"}
+            {title || "Factoría"}
           </h1>
         </div>
 
@@ -48,7 +48,7 @@ export function AppHeader({ title, showBackButton }: AppHeaderProps) {
             onClick={() => navigate("/")}
             className="text-xl font-semibold text-foreground hover:text-primary transition-colors"
           >
-            Alimentaria
+            Factoría
           </button>
           <nav className="flex items-center gap-1">
             <Button

@@ -75,7 +75,7 @@ export function MobileNav() {
       <SheetContent side="left" className="w-[280px] p-0">
         <SheetHeader className="border-b p-4">
           <SheetTitle className="text-left flex items-center gap-2">
-            <span className="text-xl font-semibold">Alimentaria</span>
+            <span className="text-xl font-semibold">Factoría</span>
           </SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col h-[calc(100%-65px)]">
