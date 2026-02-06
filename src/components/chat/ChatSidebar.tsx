@@ -142,12 +142,13 @@ export function ChatSidebar({
                   ) : (
                     <>
                       <span className="flex-1 truncate text-sm leading-tight">{conv.title}</span>
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <div className="flex items-center gap-0.5 shrink-0">
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6"
                           onClick={(e) => handleEditClick(e, conv)}
+                          aria-label="Editar conversación"
                         >
                           <Pencil className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                         </Button>
@@ -156,6 +157,7 @@ export function ChatSidebar({
                           size="icon"
                           className="h-6 w-6"
                           onClick={(e) => handleDeleteClick(e, conv.id)}
+                          aria-label="Eliminar conversación"
                         >
                           <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
                         </Button>
