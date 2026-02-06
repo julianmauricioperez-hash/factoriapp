@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +35,14 @@ export function SharePromptDialog({
   const [loading, setLoading] = useState(false);
   const [currentIsPublic, setCurrentIsPublic] = useState(isPublic);
   const [currentSlug, setCurrentSlug] = useState(publicSlug);
+
+  // Sync state when dialog opens or props change
+  useEffect(() => {
+    if (open) {
+      setCurrentIsPublic(isPublic);
+      setCurrentSlug(publicSlug);
+    }
+  }, [open, isPublic, publicSlug]);
 
   const shareUrl = currentSlug
     ? `${window.location.origin}/p/${currentSlug}`
