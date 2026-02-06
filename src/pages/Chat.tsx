@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Menu, Download } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
@@ -15,6 +15,8 @@ import { ChatMessages } from "@/components/chat/ChatMessages";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ModelSelector } from "@/components/chat/ModelSelector";
 import { useChatConversations, ChatMessage } from "@/hooks/useChatConversations";
+import { useChatTags } from "@/hooks/useChatTags";
+import { useTags } from "@/hooks/useTags";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -36,6 +38,16 @@ const Chat = () => {
     getMessages,
     addMessage,
   } = useChatConversations();
+
+  const { tags, createTag } = useTags();
+  const { fetchChatTags, addTagToChat, removeTagFromChat, getTagsForChat } = useChatTags();
+
+  // Fetch chat tags when conversations load
+  useEffect(() => {
+    if (conversations.length > 0) {
+      fetchChatTags(conversations.map((c) => c.id));
+    }
+  }, [conversations, fetchChatTags]);
 
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -302,6 +314,11 @@ const Chat = () => {
       onDelete={handleDeleteConversation}
       onRename={updateConversationTitle}
       loading={conversationsLoading}
+      availableTags={tags}
+      getTagsForChat={getTagsForChat}
+      onAddTagToChat={addTagToChat}
+      onRemoveTagFromChat={removeTagFromChat}
+      onCreateTag={createTag}
     />
   );
 
