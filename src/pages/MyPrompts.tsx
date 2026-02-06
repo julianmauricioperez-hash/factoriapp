@@ -33,10 +33,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
 import { useCollections } from "@/hooks/useCollections";
+import { useTags } from "@/hooks/useTags";
 import { Plus, Search, X, ArrowUpDown, Download, ChevronLeft, ChevronRight, Star, FolderOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PromptCard } from "@/components/PromptCard";
 import { AppLayout } from "@/components/AppLayout";
+import { TagsFilter } from "@/components/TagsFilter";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +70,14 @@ const MyPrompts = () => {
   const { user, loading: authLoading } = useAuth();
   const { categories } = useCategories();
   const { collections } = useCollections();
+  const { 
+    tags: allTags, 
+    getTagsForPrompt, 
+    fetchPromptTags, 
+    createTag, 
+    addTagToPrompt, 
+    removeTagFromPrompt 
+  } = useTags();
   const navigate = useNavigate();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +91,7 @@ const MyPrompts = () => {
   const [filterCollection, setFilterCollection] = useState<string>("all");
   const [sortOption, setSortOption] = useState<SortOption>("date-desc");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -96,7 +107,14 @@ const MyPrompts = () => {
         (filterCollection === "none" && !prompt.collection_id) ||
         prompt.collection_id === filterCollection;
       const matchesFavorite = !showFavoritesOnly || prompt.is_favorite;
-      return matchesSearch && matchesCategory && matchesCollection && matchesFavorite;
+      
+      // Filter by selected tags
+      const matchesTags = selectedTagIds.length === 0 || 
+        selectedTagIds.every((tagId) => 
+          getTagsForPrompt(prompt.id).some((t) => t.id === tagId)
+        );
+      
+      return matchesSearch && matchesCategory && matchesCollection && matchesFavorite && matchesTags;
     })
     .sort((a, b) => {
       switch (sortOption) {
@@ -121,7 +139,15 @@ const MyPrompts = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterCategory, filterCollection, sortOption, showFavoritesOnly]);
+  }, [searchQuery, filterCategory, filterCollection, sortOption, showFavoritesOnly, selectedTagIds]);
+
+  const toggleTagFilter = (tagId: string) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId)
+        ? prev.filter((id) => id !== tagId)
+        : [...prev, tagId]
+    );
+  };
 
   const toggleFavorite = async (prompt: Prompt) => {
     const newValue = !prompt.is_favorite;
@@ -210,6 +236,11 @@ const MyPrompts = () => {
 
       if (error) throw error;
       setPrompts(data || []);
+      
+      // Fetch tags for all prompts
+      if (data && data.length > 0) {
+        fetchPromptTags(data.map((p) => p.id));
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -445,6 +476,15 @@ const MyPrompts = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Tags Filter */}
+            {allTags.length > 0 && (
+              <TagsFilter
+                tags={allTags}
+                selectedTags={selectedTagIds}
+                onToggleTag={toggleTagFilter}
+              />
+            )}
           </div>
         )}
 
@@ -486,8 +526,16 @@ const MyPrompts = () => {
                   onShareUpdate={handleShareUpdate}
                   onPromptUpdate={handlePromptUpdate}
                   onCollectionUpdate={handleCollectionUpdate}
-                  onDuplicate={(newPrompt) => setPrompts([newPrompt, ...prompts])}
+                  onDuplicate={(newPrompt) => {
+                    setPrompts([newPrompt, ...prompts]);
+                    fetchPromptTags([newPrompt.id]);
+                  }}
                   collections={collections}
+                  promptTags={getTagsForPrompt(prompt.id)}
+                  availableTags={allTags}
+                  onAddTag={addTagToPrompt}
+                  onRemoveTag={removeTagFromPrompt}
+                  onCreateTag={createTag}
                 />
                 </div>
               ))}
