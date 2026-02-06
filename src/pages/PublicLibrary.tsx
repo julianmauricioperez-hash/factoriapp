@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,20 +12,28 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { usePublicPrompts } from "@/hooks/usePublicPrompts";
-import { Search, Copy, X, BookOpen, ExternalLink, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { usePromptLikes } from "@/hooks/usePromptLikes";
+import { useAuth } from "@/hooks/useAuth";
+import { Search, Copy, X, BookOpen, ExternalLink, ArrowUpDown, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 
-type SortOption = "date-desc" | "date-asc" | "category-asc" | "category-desc";
+type SortOption = "date-desc" | "date-asc" | "category-asc" | "category-desc" | "likes-desc";
 
 const ITEMS_PER_PAGE = 10;
 
 const PublicLibrary = () => {
   const { prompts, loading } = usePublicPrompts();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Get all prompt IDs for likes hook
+  const promptIds = useMemo(() => prompts.map((p) => p.id), [prompts]);
+  const { likeCounts, userLikes, toggleLike } = usePromptLikes(promptIds);
 
   const categories = [...new Set(prompts.map((p) => p.category))].sort();
 
@@ -48,6 +56,8 @@ const PublicLibrary = () => {
           return a.category.localeCompare(b.category);
         case "category-desc":
           return b.category.localeCompare(a.category);
+        case "likes-desc":
+          return (likeCounts[b.id] || 0) - (likeCounts[a.id] || 0);
         default:
           return 0;
       }
@@ -81,6 +91,19 @@ const PublicLibrary = () => {
     setSearchQuery("");
     setFilterCategory("all");
     setCurrentPage(1);
+  };
+
+  const handleLike = async (promptId: string) => {
+    if (!user) {
+      toast({
+        title: "Inicia sesión",
+        description: "Necesitas iniciar sesión para dar like.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+    await toggleLike(promptId);
   };
 
   const copyToClipboard = async (text: string) => {
@@ -153,6 +176,7 @@ const PublicLibrary = () => {
               <SelectValue placeholder="Ordenar" />
             </SelectTrigger>
             <SelectContent className="bg-popover">
+              <SelectItem value="likes-desc">Más populares</SelectItem>
               <SelectItem value="date-desc">Más recientes</SelectItem>
               <SelectItem value="date-asc">Más antiguos</SelectItem>
               <SelectItem value="category-asc">Categoría A-Z</SelectItem>
@@ -209,7 +233,22 @@ const PublicLibrary = () => {
                   <CardContent className="p-4">
                     <div className="mb-2 flex items-start justify-between gap-2">
                       <Badge variant="secondary">{prompt.category}</Badge>
-                      <div className="flex gap-1">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`h-8 gap-1 px-2 ${
+                            userLikes[prompt.id]
+                              ? "text-red-500 hover:text-red-600"
+                              : "text-muted-foreground hover:text-red-500"
+                          }`}
+                          onClick={() => handleLike(prompt.id)}
+                        >
+                          <Heart
+                            className={`h-4 w-4 ${userLikes[prompt.id] ? "fill-current" : ""}`}
+                          />
+                          <span className="text-xs">{likeCounts[prompt.id] || 0}</span>
+                        </Button>
                         <Link to={`/p/${prompt.public_slug}`}>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                             <ExternalLink className="h-4 w-4" />
