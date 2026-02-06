@@ -150,7 +150,7 @@ const Index = () => {
               <div className="flex flex-col items-center justify-center py-8 space-y-4 animate-in fade-in duration-300">
                 <CheckCircle2 className="h-16 w-16 text-primary" />
                 <p className="text-lg font-medium text-foreground text-center">
-                  ¡Gracias por alimentar la IA!
+                  ¡Gracias por alimentar la Factoría!
                 </p>
               </div>
             ) : (
