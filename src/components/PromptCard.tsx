@@ -8,12 +8,18 @@ import { VariableDialog, hasVariables } from "./VariableDialog";
 import { SharePromptDialog } from "./SharePromptDialog";
 import { ImprovePromptDialog } from "./ImprovePromptDialog";
 import { CollectionDialog } from "./CollectionDialog";
+import { TagsInput } from "./TagsInput";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Collection {
   id: string;
   name: string;
   description: string | null;
+}
+
+interface Tag {
+  id: string;
+  name: string;
 }
 
 interface Prompt {
@@ -37,6 +43,12 @@ interface PromptCardProps {
   onCollectionUpdate?: (promptId: string, collectionId: string | null) => void;
   onDuplicate?: (newPrompt: Prompt) => void;
   collections?: Collection[];
+  // Tags props
+  promptTags?: Tag[];
+  availableTags?: Tag[];
+  onAddTag?: (promptId: string, tagId: string) => Promise<boolean>;
+  onRemoveTag?: (promptId: string, tagId: string) => Promise<boolean>;
+  onCreateTag?: (name: string) => Promise<Tag | null>;
 }
 
 export const PromptCard = ({ 
@@ -48,7 +60,12 @@ export const PromptCard = ({
   onPromptUpdate,
   onCollectionUpdate,
   onDuplicate,
-  collections = []
+  collections = [],
+  promptTags = [],
+  availableTags = [],
+  onAddTag,
+  onRemoveTag,
+  onCreateTag,
 }: PromptCardProps) => {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
@@ -295,10 +312,21 @@ export const PromptCard = ({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <p className="text-sm text-foreground whitespace-pre-wrap">
             {renderPromptText(prompt.prompt_text)}
           </p>
+          
+          {/* Tags section */}
+          {onAddTag && onRemoveTag && onCreateTag && (
+            <TagsInput
+              tags={promptTags}
+              availableTags={availableTags}
+              onAddTag={(tagId) => onAddTag(prompt.id, tagId)}
+              onRemoveTag={(tagId) => onRemoveTag(prompt.id, tagId)}
+              onCreateTag={onCreateTag}
+            />
+          )}
         </CardContent>
       </Card>
 
