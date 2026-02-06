@@ -12,13 +12,12 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { usePublicPrompts } from "@/hooks/usePublicPrompts";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Search, Copy, X, BookOpen, ArrowLeft, ExternalLink } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { Search, Copy, X, BookOpen, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AppLayout } from "@/components/AppLayout";
 
 const PublicLibrary = () => {
   const { prompts, loading } = usePublicPrompts();
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
@@ -43,32 +42,26 @@ const PublicLibrary = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Cargando biblioteca...</p>
-      </div>
+      <AppLayout title="Biblioteca">
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Cargando biblioteca...</p>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <AppLayout title="Biblioteca">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-semibold text-foreground">
-                Biblioteca Pública
-              </h1>
-            </div>
-          </div>
-          <ThemeToggle />
+        <div className="mb-4 flex items-center gap-2">
+          <BookOpen className="h-6 w-6 text-primary" />
+          <h1 className="text-xl font-semibold text-foreground md:text-2xl">
+            Biblioteca Pública
+          </h1>
         </div>
 
-        <p className="mb-6 text-muted-foreground">
-          Explora prompts compartidos por la comunidad. Copia y adapta los que te gusten.
+        <p className="mb-4 text-sm text-muted-foreground md:text-base">
+          Explora prompts compartidos por la comunidad.
         </p>
 
         {/* Search and Filter Controls */}
@@ -95,7 +88,7 @@ const PublicLibrary = () => {
               <SelectValue placeholder="Categoría" />
             </SelectTrigger>
             <SelectContent className="bg-popover">
-              <SelectItem value="all">Todas las categorías</SelectItem>
+              <SelectItem value="all">Todas</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat} value={cat}>
                   {cat}
@@ -125,20 +118,21 @@ const PublicLibrary = () => {
                     <Badge variant="secondary">{prompt.category}</Badge>
                     <div className="flex gap-1">
                       <Link to={`/p/${prompt.public_slug}`}>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                           <ExternalLink className="h-4 w-4" />
                         </Button>
                       </Link>
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-8 w-8 p-0"
                         onClick={() => copyToClipboard(prompt.prompt_text)}
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                  <p className="whitespace-pre-wrap text-sm text-foreground">
+                  <p className="whitespace-pre-wrap text-sm text-foreground line-clamp-4">
                     {prompt.prompt_text}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
@@ -150,7 +144,7 @@ const PublicLibrary = () => {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

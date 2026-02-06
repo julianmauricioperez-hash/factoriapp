@@ -6,8 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePromptStats } from "@/hooks/usePromptStats";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { ArrowLeft, FileText, Star, FolderOpen, TrendingUp, Hash, Calendar } from "lucide-react";
+import { AppLayout } from "@/components/AppLayout";
+import { FileText, Star, FolderOpen, TrendingUp, Hash, Calendar } from "lucide-react";
 
 interface Prompt {
   id: string;
@@ -60,24 +60,20 @@ const Statistics = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Cargando estadísticas...</p>
-      </div>
+      <AppLayout title="Estadísticas">
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Cargando estadísticas...</p>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <AppLayout title="Estadísticas">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/my-prompts")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-semibold text-foreground">Estadísticas</h1>
-          </div>
-          <ThemeToggle />
-        </div>
+        <h1 className="mb-4 text-xl font-semibold text-foreground md:text-2xl">
+          Estadísticas
+        </h1>
 
         {prompts.length === 0 ? (
           <Card className="border shadow-sm">
@@ -95,13 +91,13 @@ const Statistics = () => {
             {/* Overview Cards */}
             <div className="grid grid-cols-2 gap-3">
               <Card className="border shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 md:gap-3">
                     <div className="rounded-full bg-primary/10 p-2">
-                      <FileText className="h-5 w-5 text-primary" />
+                      <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{stats.totalPrompts}</p>
+                      <p className="text-xl md:text-2xl font-bold">{stats.totalPrompts}</p>
                       <p className="text-xs text-muted-foreground">Total prompts</p>
                     </div>
                   </div>
@@ -109,13 +105,13 @@ const Statistics = () => {
               </Card>
 
               <Card className="border shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 md:gap-3">
                     <div className="rounded-full bg-yellow-500/10 p-2">
-                      <Star className="h-5 w-5 text-yellow-500" />
+                      <Star className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{stats.totalFavorites}</p>
+                      <p className="text-xl md:text-2xl font-bold">{stats.totalFavorites}</p>
                       <p className="text-xs text-muted-foreground">Favoritos</p>
                     </div>
                   </div>
@@ -123,13 +119,13 @@ const Statistics = () => {
               </Card>
 
               <Card className="border shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 md:gap-3">
                     <div className="rounded-full bg-green-500/10 p-2">
-                      <FolderOpen className="h-5 w-5 text-green-500" />
+                      <FolderOpen className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{stats.totalCategories}</p>
+                      <p className="text-xl md:text-2xl font-bold">{stats.totalCategories}</p>
                       <p className="text-xs text-muted-foreground">Categorías</p>
                     </div>
                   </div>
@@ -137,14 +133,14 @@ const Statistics = () => {
               </Card>
 
               <Card className="border shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 md:gap-3">
                     <div className="rounded-full bg-blue-500/10 p-2">
-                      <Hash className="h-5 w-5 text-blue-500" />
+                      <Hash className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{stats.avgPromptLength}</p>
-                      <p className="text-xs text-muted-foreground">Caracteres promedio</p>
+                      <p className="text-xl md:text-2xl font-bold">{stats.avgPromptLength}</p>
+                      <p className="text-xs text-muted-foreground">Chars prom.</p>
                     </div>
                   </div>
                 </CardContent>
@@ -154,7 +150,7 @@ const Statistics = () => {
             {/* Category Distribution */}
             <Card className="border shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
+                <CardTitle className="text-sm md:text-base font-medium flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   Distribución por Categoría
                 </CardTitle>
@@ -162,9 +158,9 @@ const Statistics = () => {
               <CardContent className="space-y-3">
                 {stats.categoryStats.slice(0, 5).map((cat) => (
                   <div key={cat.name} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">{cat.name}</span>
-                      <span className="text-muted-foreground">
+                    <div className="flex justify-between text-xs md:text-sm">
+                      <span className="font-medium truncate mr-2">{cat.name}</span>
+                      <span className="text-muted-foreground shrink-0">
                         {cat.count} ({cat.percentage}%)
                       </span>
                     </div>
@@ -182,13 +178,13 @@ const Statistics = () => {
             {/* Recent Activity */}
             <Card className="border shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
+                <CardTitle className="text-sm md:text-base font-medium flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   Actividad (Últimos 7 días)
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-end justify-between gap-2 h-24">
+                <div className="flex items-end justify-between gap-1 md:gap-2 h-24">
                   {stats.recentActivity.map((day) => {
                     const maxCount = Math.max(...stats.recentActivity.map(d => d.count), 1);
                     const height = (day.count / maxCount) * 100;
@@ -201,7 +197,7 @@ const Statistics = () => {
                             style={{ height: `${Math.max(height, 4)}%`, minHeight: '4px' }}
                           />
                         </div>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-[10px] md:text-xs text-muted-foreground">
                           {formatDate(day.date)}
                         </span>
                       </div>
@@ -214,20 +210,20 @@ const Statistics = () => {
             {/* Quick Stats */}
             <Card className="border shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium">Datos Adicionales</CardTitle>
+                <CardTitle className="text-sm md:text-base font-medium">Datos Adicionales</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
                   <div>
                     <p className="text-muted-foreground">Prompt más largo</p>
-                    <p className="font-medium">{stats.longestPrompt} caracteres</p>
+                    <p className="font-medium">{stats.longestPrompt} chars</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Prompt más corto</p>
-                    <p className="font-medium">{stats.shortestPrompt} caracteres</p>
+                    <p className="font-medium">{stats.shortestPrompt} chars</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Promedio por categoría</p>
+                    <p className="text-muted-foreground">Prom. por categoría</p>
                     <p className="font-medium">{stats.avgPromptsPerCategory} prompts</p>
                   </div>
                   <div>
@@ -244,7 +240,7 @@ const Statistics = () => {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

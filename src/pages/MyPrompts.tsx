@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -32,10 +32,10 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { Plus, LogOut, Search, X, ArrowUpDown, Download, ChevronLeft, ChevronRight, Star, FolderOpen, BarChart3, BookOpen } from "lucide-react";
+import { Plus, Search, X, ArrowUpDown, Download, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { PromptCard } from "@/components/PromptCard";
+import { AppLayout } from "@/components/AppLayout";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,7 +52,6 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "category-desc", label: "Categoría (Z-A)" },
 ];
 
-
 interface Prompt {
   id: string;
   category: string;
@@ -63,9 +62,8 @@ interface Prompt {
   public_slug?: string | null;
 }
 
-
 const MyPrompts = () => {
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { categories } = useCategories();
   const navigate = useNavigate();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
@@ -113,7 +111,6 @@ const MyPrompts = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterCategory, sortOption, showFavoritesOnly]);
@@ -275,11 +272,6 @@ const MyPrompts = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth");
-  };
-
   const exportToJSON = () => {
     const dataStr = JSON.stringify(prompts, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -318,114 +310,103 @@ const MyPrompts = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Cargando...</p>
-      </div>
+      <AppLayout title="Mis Prompts">
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <AppLayout title="Mis Prompts">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-foreground">Mis Prompts</h1>
-          <div className="flex gap-2">
-            <ThemeToggle />
-            {prompts.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Download className="mr-1 h-4 w-4" />
-                    Exportar
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-popover">
-                  <DropdownMenuItem onClick={exportToJSON}>
-                    Exportar como JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={exportToCSV}>
-                    Exportar como CSV
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <Button variant="outline" size="sm" onClick={() => navigate("/statistics")}>
-              <BarChart3 className="mr-1 h-4 w-4" />
-              Stats
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/collections")}>
-              <FolderOpen className="mr-1 h-4 w-4" />
-              Colecciones
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/library")}>
-              <BookOpen className="mr-1 h-4 w-4" />
-              Biblioteca
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/")}>
-              <Plus className="mr-1 h-4 w-4" />
-              Nuevo
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="mr-1 h-4 w-4" />
-              Salir
-            </Button>
-          </div>
+        {/* Mobile Header with Export */}
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-foreground md:text-2xl">
+            Mis Prompts
+          </h1>
+          {prompts.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 md:mr-1" />
+                  <span className="hidden md:inline">Exportar</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-popover">
+                <DropdownMenuItem onClick={exportToJSON}>
+                  Exportar como JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToCSV}>
+                  Exportar como CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Search and Filter Controls */}
         {prompts.length > 0 && (
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar en tus prompts..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-9 bg-background"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+          <div className="mb-4 space-y-3">
+            {/* Search Row */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-9 bg-background"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <Button
+                variant={showFavoritesOnly ? "default" : "outline"}
+                size="icon"
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                className="shrink-0"
+              >
+                <Star className={`h-4 w-4 ${showFavoritesOnly ? "fill-current" : ""}`} />
+              </Button>
             </div>
-            <Button
-              variant={showFavoritesOnly ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              className="shrink-0"
-            >
-              <Star className={`h-4 w-4 ${showFavoritesOnly ? "fill-current" : ""}`} />
-            </Button>
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-background">
-                <SelectValue placeholder="Filtrar por categoría" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                <SelectItem value="all">Todas las categorías</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
-              <SelectTrigger className="w-full sm:w-[160px] bg-background">
-                <ArrowUpDown className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Ordenar" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {SORT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            {/* Filter Row */}
+            <div className="flex gap-2">
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="flex-1 bg-background">
+                  <SelectValue placeholder="Categoría" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="all">Todas</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+                <SelectTrigger className="flex-1 bg-background">
+                  <ArrowUpDown className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Ordenar" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {SORT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
 
@@ -477,7 +458,7 @@ const MyPrompts = () => {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Página {currentPage} de {totalPages}
+                  {currentPage} / {totalPages}
                 </span>
                 <Button
                   variant="outline"
@@ -494,7 +475,7 @@ const MyPrompts = () => {
 
         {/* Edit Dialog */}
         <Dialog open={!!editingPrompt} onOpenChange={() => setEditingPrompt(null)}>
-          <DialogContent className="bg-background">
+          <DialogContent className="bg-background mx-4 max-w-[calc(100%-2rem)] sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Editar Prompt</DialogTitle>
             </DialogHeader>
@@ -524,15 +505,11 @@ const MyPrompts = () => {
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setEditingPrompt(null)}
-                disabled={saving}
-              >
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={() => setEditingPrompt(null)} disabled={saving} className="w-full sm:w-auto">
                 Cancelar
               </Button>
-              <Button onClick={handleSaveEdit} disabled={saving}>
+              <Button onClick={handleSaveEdit} disabled={saving} className="w-full sm:w-auto">
                 {saving ? "Guardando..." : "Guardar"}
               </Button>
             </DialogFooter>
@@ -540,23 +517,19 @@ const MyPrompts = () => {
         </Dialog>
 
         {/* Delete Confirmation */}
-        <AlertDialog
-          open={!!deletingPrompt}
-          onOpenChange={() => setDeletingPrompt(null)}
-        >
-          <AlertDialogContent className="bg-background">
+        <AlertDialog open={!!deletingPrompt} onOpenChange={() => setDeletingPrompt(null)}>
+          <AlertDialogContent className="bg-background mx-4 max-w-[calc(100%-2rem)] sm:max-w-md">
             <AlertDialogHeader>
               <AlertDialogTitle>¿Eliminar este prompt?</AlertDialogTitle>
               <AlertDialogDescription>
-                Esta acción no se puede deshacer. El prompt será eliminado
-                permanentemente.
+                Esta acción no se puede deshacer.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+              <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
               >
                 Eliminar
               </AlertDialogAction>
@@ -564,7 +537,7 @@ const MyPrompts = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
