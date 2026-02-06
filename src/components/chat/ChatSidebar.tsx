@@ -85,7 +85,7 @@ export function ChatSidebar({
           </Button>
         </div>
         
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-2 space-y-1">
             {loading ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
@@ -100,14 +100,14 @@ export function ChatSidebar({
                 <div
                   key={conv.id}
                   className={cn(
-                    "group flex items-start gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors min-h-[40px]",
+                    "group flex items-center gap-1.5 px-2 py-2 rounded-md cursor-pointer transition-colors",
                     selectedId === conv.id
                       ? "bg-primary/10 text-primary"
                       : "hover:bg-muted"
                   )}
                   onClick={() => !editingId && onSelect(conv.id)}
                 >
-                  <MessageSquare className="h-4 w-4 shrink-0 mt-0.5" />
+                  <MessageSquare className="h-4 w-4 flex-shrink-0" />
                   
                   {editingId === conv.id ? (
                     <div className="flex-1 flex items-center gap-1 min-w-0">
@@ -125,7 +125,7 @@ export function ChatSidebar({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 shrink-0"
+                        className="h-6 w-6 flex-shrink-0"
                         onClick={handleSaveEdit}
                       >
                         <Check className="h-3 w-3 text-primary" />
@@ -133,16 +133,16 @@ export function ChatSidebar({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 shrink-0"
+                        className="h-6 w-6 flex-shrink-0"
                         onClick={handleCancelEdit}
                       >
                         <X className="h-3 w-3 text-muted-foreground" />
                       </Button>
                     </div>
                   ) : (
-                    <>
-                      <span className="flex-1 truncate text-sm leading-tight">{conv.title}</span>
-                      <div className="flex items-center gap-0.5 shrink-0">
+                    <div className="flex-1 flex items-center gap-1 min-w-0 overflow-hidden">
+                      <span className="truncate text-sm flex-1">{conv.title}</span>
+                      <div className="flex items-center flex-shrink-0 ml-1">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -150,25 +150,25 @@ export function ChatSidebar({
                           onClick={(e) => handleEditClick(e, conv)}
                           aria-label="Editar conversación"
                         >
-                          <Pencil className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                          <Pencil className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6"
+                          className="h-6 w-6 hover:text-destructive"
                           onClick={(e) => handleDeleteClick(e, conv.id)}
                           aria-label="Eliminar conversación"
                         >
-                          <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               ))
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
