@@ -12,25 +12,43 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { usePublicPrompts } from "@/hooks/usePublicPrompts";
-import { Search, Copy, X, BookOpen, ExternalLink } from "lucide-react";
+import { Search, Copy, X, BookOpen, ExternalLink, ArrowUpDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
+
+type SortOption = "date-desc" | "date-asc" | "category-asc" | "category-desc";
 
 const PublicLibrary = () => {
   const { prompts, loading } = usePublicPrompts();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("date-desc");
 
   const categories = [...new Set(prompts.map((p) => p.category))].sort();
 
-  const filteredPrompts = prompts.filter((prompt) => {
-    const matchesSearch = prompt.prompt_text
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      filterCategory === "all" || prompt.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredPrompts = prompts
+    .filter((prompt) => {
+      const matchesSearch = prompt.prompt_text
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        filterCategory === "all" || prompt.category === filterCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "date-desc":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "date-asc":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "category-asc":
+          return a.category.localeCompare(b.category);
+        case "category-desc":
+          return b.category.localeCompare(a.category);
+        default:
+          return 0;
+      }
+    });
 
   const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -84,7 +102,7 @@ const PublicLibrary = () => {
             )}
           </div>
           <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-background">
+            <SelectTrigger className="w-full sm:w-[150px] bg-background">
               <SelectValue placeholder="Categoría" />
             </SelectTrigger>
             <SelectContent className="bg-popover">
@@ -94,6 +112,18 @@ const PublicLibrary = () => {
                   {cat}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+            <SelectTrigger className="w-full sm:w-[160px] bg-background">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Ordenar" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover">
+              <SelectItem value="date-desc">Más recientes</SelectItem>
+              <SelectItem value="date-asc">Más antiguos</SelectItem>
+              <SelectItem value="category-asc">Categoría A-Z</SelectItem>
+              <SelectItem value="category-desc">Categoría Z-A</SelectItem>
             </SelectContent>
           </Select>
         </div>
