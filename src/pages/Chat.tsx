@@ -1,12 +1,13 @@
 import { useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Menu, ArrowLeft } from "lucide-react";
+import { Menu } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatMessages } from "@/components/chat/ChatMessages";
 import { ChatInput } from "@/components/chat/ChatInput";
+import { ModelSelector } from "@/components/chat/ModelSelector";
 import { useChatConversations, ChatMessage } from "@/hooks/useChatConversations";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
@@ -35,6 +36,7 @@ const Chat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("google/gemini-3-flash-preview");
 
   // Get initial prompt from URL params
   const initialPrompt = searchParams.get("prompt") || "";
@@ -63,14 +65,14 @@ const Chat = () => {
     }
   };
 
-  const streamChat = async (allMessages: { role: string; content: string }[]) => {
+  const streamChat = async (allMessages: { role: string; content: string }[], model: string) => {
     const response = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages: allMessages }),
+      body: JSON.stringify({ messages: allMessages, model }),
     });
 
     if (!response.ok) {
@@ -168,7 +170,7 @@ const Chat = () => {
         content: m.content,
       }));
 
-      const assistantContent = await streamChat(allMessages);
+      const assistantContent = await streamChat(allMessages, selectedModel);
 
       // Save assistant message
       const assistantMessage = await addMessage(conversationId, "assistant", assistantContent);
@@ -238,9 +240,9 @@ const Chat = () => {
 
         {/* Main chat area */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Mobile header */}
-          {isMobile && (
-            <div className="flex items-center gap-2 p-3 border-b">
+          {/* Header with model selector */}
+          <div className="flex items-center justify-between gap-2 p-3 border-b">
+            {isMobile && (
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon">
@@ -251,13 +253,21 @@ const Chat = () => {
                   {sidebarContent}
                 </SheetContent>
               </Sheet>
-              <span className="font-medium truncate">
+            )}
+            {isMobile && (
+              <span className="font-medium truncate flex-1">
                 {selectedConversationId
                   ? conversations.find(c => c.id === selectedConversationId)?.title || "Chat"
                   : "Nueva conversación"}
               </span>
-            </div>
-          )}
+            )}
+            {!isMobile && <div className="flex-1" />}
+            <ModelSelector
+              value={selectedModel}
+              onChange={setSelectedModel}
+              disabled={isLoading}
+            />
+          </div>
 
           <ChatMessages
             messages={messages}
