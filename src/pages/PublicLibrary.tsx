@@ -12,17 +12,20 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { usePublicPrompts } from "@/hooks/usePublicPrompts";
-import { Search, Copy, X, BookOpen, ExternalLink, ArrowUpDown } from "lucide-react";
+import { Search, Copy, X, BookOpen, ExternalLink, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 
 type SortOption = "date-desc" | "date-asc" | "category-asc" | "category-desc";
+
+const ITEMS_PER_PAGE = 10;
 
 const PublicLibrary = () => {
   const { prompts, loading } = usePublicPrompts();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const categories = [...new Set(prompts.map((p) => p.category))].sort();
 
@@ -53,9 +56,31 @@ const PublicLibrary = () => {
   const hasActiveFilters = searchQuery !== "" || filterCategory !== "all";
   const isFiltered = filteredPrompts.length !== prompts.length;
 
+  // Pagination
+  const totalPages = Math.ceil(filteredPrompts.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedPrompts = filteredPrompts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Reset to page 1 when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setFilterCategory(value);
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (value: SortOption) => {
+    setSortBy(value);
+    setCurrentPage(1);
+  };
+
   const clearFilters = () => {
     setSearchQuery("");
     setFilterCategory("all");
+    setCurrentPage(1);
   };
 
   const copyToClipboard = async (text: string) => {
@@ -97,7 +122,7 @@ const PublicLibrary = () => {
             <Input
               placeholder="Buscar prompts..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9 pr-9 bg-background"
             />
             {searchQuery && (
@@ -109,7 +134,7 @@ const PublicLibrary = () => {
               </button>
             )}
           </div>
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <Select value={filterCategory} onValueChange={handleCategoryChange}>
             <SelectTrigger className="w-full sm:w-[150px] bg-background">
               <SelectValue placeholder="Categoría" />
             </SelectTrigger>
@@ -122,7 +147,7 @@ const PublicLibrary = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+          <Select value={sortBy} onValueChange={(v) => handleSortChange(v as SortOption)}>
             <SelectTrigger className="w-full sm:w-[160px] bg-background">
               <ArrowUpDown className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Ordenar" />
@@ -177,38 +202,86 @@ const PublicLibrary = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {filteredPrompts.map((prompt) => (
-              <Card key={prompt.id} className="border shadow-sm">
-                <CardContent className="p-4">
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <Badge variant="secondary">{prompt.category}</Badge>
-                    <div className="flex gap-1">
-                      <Link to={`/p/${prompt.public_slug}`}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <ExternalLink className="h-4 w-4" />
+          <>
+            <div className="space-y-3">
+              {paginatedPrompts.map((prompt) => (
+                <Card key={prompt.id} className="border shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <Badge variant="secondary">{prompt.category}</Badge>
+                      <div className="flex gap-1">
+                        <Link to={`/p/${prompt.public_slug}`}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => copyToClipboard(prompt.prompt_text)}
+                        >
+                          <Copy className="h-4 w-4" />
                         </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => copyToClipboard(prompt.prompt_text)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
+                      </div>
                     </div>
-                  </div>
-                  <p className="whitespace-pre-wrap text-sm text-foreground line-clamp-4">
-                    {prompt.prompt_text}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {new Date(prompt.created_at).toLocaleDateString("es-ES")}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <p className="whitespace-pre-wrap text-sm text-foreground line-clamp-4">
+                      {prompt.prompt_text}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {new Date(prompt.created_at).toLocaleDateString("es-ES")}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((page) => {
+                      // Show first, last, current, and adjacent pages
+                      if (page === 1 || page === totalPages) return true;
+                      if (Math.abs(page - currentPage) <= 1) return true;
+                      return false;
+                    })
+                    .map((page, idx, arr) => (
+                      <span key={page} className="flex items-center">
+                        {idx > 0 && arr[idx - 1] !== page - 1 && (
+                          <span className="px-1 text-muted-foreground">...</span>
+                        )}
+                        <Button
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </Button>
+                      </span>
+                    ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </AppLayout>
