@@ -23,9 +23,8 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { CheckCircle2, LogIn, List, Plus, BookOpen } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Link } from "react-router-dom";
+import { CheckCircle2, Plus } from "lucide-react";
+import { AppLayout } from "@/components/AppLayout";
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
@@ -116,118 +115,93 @@ const Index = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-sm border">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
+    <AppLayout title="Nuevo Prompt">
+      <div className="flex items-center justify-center py-4 md:py-8">
+        <Card className="w-full max-w-md shadow-sm border">
+          <CardHeader className="pb-4">
             <CardTitle className="text-xl font-medium text-foreground">
               Registrar Prompt
             </CardTitle>
-            <div className="flex gap-1">
-              <ThemeToggle />
-              {!authLoading && (
-                user ? (
-                  <Button variant="ghost" size="sm" onClick={() => navigate("/my-prompts")}>
-                    <List className="mr-1 h-4 w-4" />
-                    Mis Prompts
-                  </Button>
-                ) : (
-                  <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
-                    <LogIn className="mr-1 h-4 w-4" />
-                    Entrar
-                  </Button>
-                )
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {showSuccess ? (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4 animate-in fade-in duration-300">
-              <CheckCircle2 className="h-16 w-16 text-primary" />
-              <p className="text-lg font-medium text-foreground text-center">
-                ¡Gracias por alimentar la IA!
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="category" className="text-foreground">
-                  Categoría
-                </Label>
-                <div className="flex gap-2">
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger id="category" className="bg-background flex-1">
-                      <SelectValue placeholder="Selecciona una categoría" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover">
-                      {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {user && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setShowAddCategory(true)}
-                      title="Agregar categoría"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="prompt" className="text-foreground">
-                  Prompt
-                </Label>
-                <Textarea
-                  id="prompt"
-                  placeholder="Escribe tu prompt aquí..."
-                  value={promptText}
-                  onChange={(e) => setPromptText(e.target.value)}
-                  className="min-h-[120px] resize-none bg-background"
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Enviando..." : "Enviar"}
-              </Button>
-
-              {!user && !authLoading && (
-                <p className="text-xs text-center text-muted-foreground">
-                  <button
-                    type="button"
-                    onClick={() => navigate("/auth")}
-                    className="underline hover:text-foreground"
-                  >
-                    Inicia sesión
-                  </button>
-                  {" "}para guardar y gestionar tus prompts
+          </CardHeader>
+          <CardContent>
+            {showSuccess ? (
+              <div className="flex flex-col items-center justify-center py-8 space-y-4 animate-in fade-in duration-300">
+                <CheckCircle2 className="h-16 w-16 text-primary" />
+                <p className="text-lg font-medium text-foreground text-center">
+                  ¡Gracias por alimentar la IA!
                 </p>
-              )}
-
-              <div className="pt-2 border-t">
-                <Link to="/library">
-                  <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
-                    <BookOpen className="mr-1 h-4 w-4" />
-                    Explorar biblioteca pública
-                  </Button>
-                </Link>
               </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-foreground">
+                    Categoría
+                  </Label>
+                  <div className="flex gap-2">
+                    <Select value={category} onValueChange={setCategory}>
+                      <SelectTrigger id="category" className="bg-background flex-1">
+                        <SelectValue placeholder="Selecciona una categoría" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover">
+                        {categories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {user && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowAddCategory(true)}
+                        title="Agregar categoría"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="prompt" className="text-foreground">
+                    Prompt
+                  </Label>
+                  <Textarea
+                    id="prompt"
+                    placeholder="Escribe tu prompt aquí..."
+                    value={promptText}
+                    onChange={(e) => setPromptText(e.target.value)}
+                    className="min-h-[120px] resize-none bg-background"
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Enviando..." : "Enviar"}
+                </Button>
+
+                {!user && !authLoading && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    <button
+                      type="button"
+                      onClick={() => navigate("/auth")}
+                      className="underline hover:text-foreground"
+                    >
+                      Inicia sesión
+                    </button>
+                    {" "}para guardar y gestionar tus prompts
+                  </p>
+                )}
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Add Category Dialog */}
       <Dialog open={showAddCategory} onOpenChange={setShowAddCategory}>
-        <DialogContent className="bg-background">
+        <DialogContent className="bg-background mx-4 max-w-[calc(100%-2rem)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Nueva Categoría</DialogTitle>
           </DialogHeader>
@@ -242,7 +216,7 @@ const Index = () => {
               maxLength={50}
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button
               variant="outline"
               onClick={() => {
@@ -250,19 +224,21 @@ const Index = () => {
                 setNewCategoryName("");
               }}
               disabled={addingCategory}
+              className="w-full sm:w-auto"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleAddCategory}
               disabled={addingCategory || !newCategoryName.trim()}
+              className="w-full sm:w-auto"
             >
               {addingCategory ? "Creando..." : "Crear"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 };
 

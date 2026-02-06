@@ -25,8 +25,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useCollections } from "@/hooks/useCollections";
-import { Pencil, Trash2, Plus, ArrowLeft, FolderOpen } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { Pencil, Trash2, Plus, FolderOpen } from "lucide-react";
+import { AppLayout } from "@/components/AppLayout";
 
 const Collections = () => {
   const { user, loading: authLoading } = useAuth();
@@ -122,29 +122,25 @@ const Collections = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Cargando...</p>
-      </div>
+      <AppLayout title="Colecciones">
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <AppLayout title="Colecciones">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/my-prompts")}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-2xl font-semibold text-foreground">Mis Colecciones</h1>
-          </div>
-          <div className="flex gap-2">
-            <ThemeToggle />
-            <Button size="sm" onClick={() => setShowAddDialog(true)}>
-              <Plus className="mr-1 h-4 w-4" />
-              Nueva
-            </Button>
-          </div>
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-foreground md:text-2xl">
+            Mis Colecciones
+          </h1>
+          <Button size="sm" onClick={() => setShowAddDialog(true)}>
+            <Plus className="h-4 w-4 md:mr-1" />
+            <span className="hidden md:inline">Nueva</span>
+          </Button>
         </div>
 
         {collections.length === 0 ? (
@@ -165,16 +161,16 @@ const Collections = () => {
             {collections.map((collection) => (
               <Card key={collection.id} className="border shadow-sm">
                 <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-medium text-foreground">{collection.name}</h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-foreground truncate">{collection.name}</h3>
                       {collection.description && (
-                        <p className="mt-1 text-sm text-muted-foreground">
+                        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
                           {collection.description}
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -201,7 +197,7 @@ const Collections = () => {
 
         {/* Add Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="bg-background">
+          <DialogContent className="bg-background mx-4 max-w-[calc(100%-2rem)] sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Nueva Colección</DialogTitle>
             </DialogHeader>
@@ -229,11 +225,11 @@ const Collections = () => {
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)} disabled={saving}>
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={() => setShowAddDialog(false)} disabled={saving} className="w-full sm:w-auto">
                 Cancelar
               </Button>
-              <Button onClick={handleAdd} disabled={saving || !newName.trim()}>
+              <Button onClick={handleAdd} disabled={saving || !newName.trim()} className="w-full sm:w-auto">
                 {saving ? "Creando..." : "Crear"}
               </Button>
             </DialogFooter>
@@ -242,7 +238,7 @@ const Collections = () => {
 
         {/* Edit Dialog */}
         <Dialog open={!!editingCollection} onOpenChange={() => setEditingCollection(null)}>
-          <DialogContent className="bg-background">
+          <DialogContent className="bg-background mx-4 max-w-[calc(100%-2rem)] sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Editar Colección</DialogTitle>
             </DialogHeader>
@@ -268,11 +264,11 @@ const Collections = () => {
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingCollection(null)} disabled={saving}>
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={() => setEditingCollection(null)} disabled={saving} className="w-full sm:w-auto">
                 Cancelar
               </Button>
-              <Button onClick={handleEdit} disabled={saving || !newName.trim()}>
+              <Button onClick={handleEdit} disabled={saving || !newName.trim()} className="w-full sm:w-auto">
                 {saving ? "Guardando..." : "Guardar"}
               </Button>
             </DialogFooter>
@@ -281,18 +277,18 @@ const Collections = () => {
 
         {/* Delete Confirmation */}
         <AlertDialog open={!!deletingCollection} onOpenChange={() => setDeletingCollection(null)}>
-          <AlertDialogContent className="bg-background">
+          <AlertDialogContent className="bg-background mx-4 max-w-[calc(100%-2rem)] sm:max-w-md">
             <AlertDialogHeader>
               <AlertDialogTitle>¿Eliminar "{deletingCollection?.name}"?</AlertDialogTitle>
               <AlertDialogDescription>
-                Esta acción no se puede deshacer. Los prompts en esta colección no serán eliminados, solo se desasociarán.
+                Esta acción no se puede deshacer. Los prompts en esta colección no serán eliminados.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+              <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
               >
                 Eliminar
               </AlertDialogAction>
@@ -300,7 +296,7 @@ const Collections = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
