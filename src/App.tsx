@@ -12,6 +12,7 @@ import Collections from "./pages/Collections";
 import Statistics from "./pages/Statistics";
 import PublicLibrary from "./pages/PublicLibrary";
 import SharedPrompt from "./pages/SharedPrompt";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/collections" element={<Collections />} />
               <Route path="/statistics" element={<Statistics />} />
               <Route path="/library" element={<PublicLibrary />} />
+              <Route path="/chat" element={<Chat />} />
               <Route path="/p/:slug" element={<SharedPrompt />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

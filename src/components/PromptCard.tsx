@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Star, Copy, Check, Braces, Share2, Sparkles, FolderOpen } from "lucide-react";
+import { Pencil, Trash2, Star, Copy, Check, Braces, Share2, Sparkles, FolderOpen, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { VariableDialog, hasVariables } from "./VariableDialog";
 import { SharePromptDialog } from "./SharePromptDialog";
@@ -46,11 +47,16 @@ export const PromptCard = ({
   onCollectionUpdate,
   collections = []
 }: PromptCardProps) => {
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [showVariableDialog, setShowVariableDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showImproveDialog, setShowImproveDialog] = useState(false);
   const [showCollectionDialog, setShowCollectionDialog] = useState(false);
+
+  const handleTestWithAI = () => {
+    navigate(`/chat?prompt=${encodeURIComponent(prompt.prompt_text)}`);
+  };
 
   const promptHasVars = hasVariables(prompt.prompt_text);
   const currentCollection = collections.find(c => c.id === prompt.collection_id);
@@ -142,6 +148,15 @@ export const PromptCard = ({
               </p>
             </div>
             <div className="flex flex-wrap justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleTestWithAI}
+                title="Probar con IA"
+              >
+                <MessageSquare className="h-4 w-4 text-primary" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
