@@ -37,6 +37,7 @@ export type Database = {
       }
       collections: {
         Row: {
+          color: string | null
           created_at: string
           description: string | null
           id: string
@@ -44,6 +45,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          color?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -51,6 +53,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          color?: string | null
           created_at?: string
           description?: string | null
           id?: string
