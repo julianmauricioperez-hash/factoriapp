@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Menu, Download } from "lucide-react";
+import { Menu, Download, Tag } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -34,6 +35,7 @@ const Chat = () => {
     loading: conversationsLoading,
     createConversation,
     updateConversationTitle,
+    toggleFavorite,
     deleteConversation,
     getMessages,
     addMessage,
@@ -313,6 +315,7 @@ const Chat = () => {
       onNew={handleNewConversation}
       onDelete={handleDeleteConversation}
       onRename={updateConversationTitle}
+      onToggleFavorite={toggleFavorite}
       loading={conversationsLoading}
       availableTags={tags}
       getTagsForChat={getTagsForChat}
@@ -355,7 +358,24 @@ const Chat = () => {
                   : "Historial"}
               </span>
             )}
-            {!isMobile && <div className="flex-1" />}
+            {!isMobile && selectedConversationId && (
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="font-medium truncate">
+                  {conversations.find(c => c.id === selectedConversationId)?.title || "Chat"}
+                </span>
+                {getTagsForChat(selectedConversationId).length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <Tag className="h-3 w-3 text-muted-foreground" />
+                    {getTagsForChat(selectedConversationId).map((tag) => (
+                      <Badge key={tag.id} variant="secondary" className="text-[10px] h-5 px-1.5">
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {!isMobile && !selectedConversationId && <div className="flex-1" />}
             <div className="flex items-center gap-2">
               {messages.length > 0 && (
                 <DropdownMenu>
