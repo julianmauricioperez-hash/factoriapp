@@ -352,7 +352,7 @@ const Chat = () => {
               <span className="font-medium truncate flex-1">
                 {selectedConversationId
                   ? conversations.find(c => c.id === selectedConversationId)?.title || "Chat"
-                  : "Nueva conversación"}
+                  : "Historial"}
               </span>
             )}
             {!isMobile && <div className="flex-1" />}
