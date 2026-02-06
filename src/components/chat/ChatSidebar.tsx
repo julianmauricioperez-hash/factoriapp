@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Plus, MessageSquare, Trash2, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
@@ -14,7 +13,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ChatConversation } from "@/hooks/useChatConversations";
+import { ChatTagsInput } from "./ChatTagsInput";
 import { cn } from "@/lib/utils";
+
+interface Tag {
+  id: string;
+  name: string;
+}
 
 interface ChatSidebarProps {
   conversations: ChatConversation[];
@@ -24,6 +29,12 @@ interface ChatSidebarProps {
   onDelete: (id: string) => void;
   onRename: (id: string, newTitle: string) => void;
   loading: boolean;
+  // Tags props
+  availableTags: Tag[];
+  getTagsForChat: (conversationId: string) => Tag[];
+  onAddTagToChat: (conversationId: string, tagId: string, tag: Tag) => Promise<boolean>;
+  onRemoveTagFromChat: (conversationId: string, tagId: string) => Promise<boolean>;
+  onCreateTag: (name: string) => Promise<Tag | null>;
 }
 
 export function ChatSidebar({
@@ -34,6 +45,11 @@ export function ChatSidebar({
   onDelete,
   onRename,
   loading,
+  availableTags,
+  getTagsForChat,
+  onAddTagToChat,
+  onRemoveTagFromChat,
+  onCreateTag,
 }: ChatSidebarProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
@@ -100,68 +116,84 @@ export function ChatSidebar({
                 <div
                   key={conv.id}
                   className={cn(
-                    "group flex items-center gap-1.5 px-2 py-2 rounded-md cursor-pointer transition-colors",
+                    "group flex flex-col gap-1 px-2 py-2 rounded-md cursor-pointer transition-colors",
                     selectedId === conv.id
                       ? "bg-primary/10 text-primary"
                       : "hover:bg-muted"
                   )}
                   onClick={() => !editingId && onSelect(conv.id)}
                 >
-                  <MessageSquare className="h-4 w-4 flex-shrink-0" />
-                  
-                  {editingId === conv.id ? (
-                    <div className="flex-1 flex items-center gap-1 min-w-0">
-                      <Input
-                        value={editingTitle}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        className="h-7 text-sm flex-1 min-w-0"
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSaveEdit(e as any);
-                          if (e.key === "Escape") handleCancelEdit(e as any);
-                        }}
-                        autoFocus
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 flex-shrink-0"
-                        onClick={handleSaveEdit}
-                      >
-                        <Check className="h-3 w-3 text-primary" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 flex-shrink-0"
-                        onClick={handleCancelEdit}
-                      >
-                        <X className="h-3 w-3 text-muted-foreground" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex items-center gap-1 min-w-0 overflow-hidden">
-                      <span className="truncate text-sm flex-1">{conv.title}</span>
-                      <div className="flex items-center flex-shrink-0 ml-1">
+                  <div className="flex items-center gap-1.5">
+                    <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                    
+                    {editingId === conv.id ? (
+                      <div className="flex-1 flex items-center gap-1 min-w-0">
+                        <Input
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          className="h-7 text-sm flex-1 min-w-0"
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSaveEdit(e as any);
+                            if (e.key === "Escape") handleCancelEdit(e as any);
+                          }}
+                          autoFocus
+                        />
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6"
-                          onClick={(e) => handleEditClick(e, conv)}
-                          aria-label="Editar conversación"
+                          className="h-6 w-6 flex-shrink-0"
+                          onClick={handleSaveEdit}
                         >
-                          <Pencil className="h-3 w-3" />
+                          <Check className="h-3 w-3 text-primary" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 hover:text-destructive"
-                          onClick={(e) => handleDeleteClick(e, conv.id)}
-                          aria-label="Eliminar conversación"
+                          className="h-6 w-6 flex-shrink-0"
+                          onClick={handleCancelEdit}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <X className="h-3 w-3 text-muted-foreground" />
                         </Button>
                       </div>
+                    ) : (
+                      <div className="flex-1 flex items-center gap-1 min-w-0 overflow-hidden">
+                        <span className="truncate text-sm flex-1">{conv.title}</span>
+                        <div className="flex items-center flex-shrink-0 ml-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={(e) => handleEditClick(e, conv)}
+                            aria-label="Editar conversación"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 hover:text-destructive"
+                            onClick={(e) => handleDeleteClick(e, conv.id)}
+                            aria-label="Eliminar conversación"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Tags row */}
+                  {editingId !== conv.id && (
+                    <div className="pl-5" onClick={(e) => e.stopPropagation()}>
+                      <ChatTagsInput
+                        conversationId={conv.id}
+                        currentTags={getTagsForChat(conv.id)}
+                        availableTags={availableTags}
+                        onAddTag={onAddTagToChat}
+                        onRemoveTag={onRemoveTagFromChat}
+                        onCreateTag={onCreateTag}
+                      />
                     </div>
                   )}
                 </div>
