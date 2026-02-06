@@ -224,6 +224,7 @@ const Chat = () => {
       onSelect={loadConversation}
       onNew={handleNewConversation}
       onDelete={handleDeleteConversation}
+      onRename={updateConversationTitle}
       loading={conversationsLoading}
     />
   );
