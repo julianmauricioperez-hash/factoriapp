@@ -62,35 +62,6 @@ export type Database = {
         }
         Relationships: []
       }
-      prompt_likes: {
-        Row: {
-          created_at: string
-          id: string
-          prompt_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          prompt_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          prompt_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prompt_likes_prompt_id_fkey"
-            columns: ["prompt_id"]
-            isOneToOne: false
-            referencedRelation: "prompts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       prompts: {
         Row: {
           category: string
