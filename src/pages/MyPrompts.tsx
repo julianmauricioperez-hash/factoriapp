@@ -471,7 +471,12 @@ const MyPrompts = () => {
         ) : (
           <>
             <div className="space-y-3">
-              {paginatedPrompts.map((prompt) => (
+              {paginatedPrompts.map((prompt, index) => (
+                <div 
+                  key={prompt.id}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms`, animationFillMode: "backwards" }}
+                >
                 <PromptCard
                   key={prompt.id}
                   prompt={prompt}
@@ -481,8 +486,10 @@ const MyPrompts = () => {
                   onShareUpdate={handleShareUpdate}
                   onPromptUpdate={handlePromptUpdate}
                   onCollectionUpdate={handleCollectionUpdate}
+                  onDuplicate={(newPrompt) => setPrompts([newPrompt, ...prompts])}
                   collections={collections}
                 />
+                </div>
               ))}
             </div>
 
