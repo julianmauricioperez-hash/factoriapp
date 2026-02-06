@@ -191,6 +191,31 @@ const Index = () => {
                     onChange={(e) => setPromptText(e.target.value)}
                     className="min-h-[120px] resize-none bg-background"
                   />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className={promptText.length > 2000 ? "text-destructive" : ""}>
+                      {promptText.length} caracteres
+                    </span>
+                    {promptText.length > 0 && promptText.length < 20 && (
+                      <span className="text-muted-foreground">
+                        💡 Sé más específico para mejores resultados
+                      </span>
+                    )}
+                    {promptText.length >= 20 && promptText.length < 50 && (
+                      <span className="text-muted-foreground">
+                        💡 Añade contexto o ejemplos
+                      </span>
+                    )}
+                    {promptText.length >= 50 && !promptText.includes("{{") && (
+                      <span className="text-muted-foreground">
+                        💡 Usa {"{{variable}}"} para partes dinámicas
+                      </span>
+                    )}
+                    {promptText.includes("{{") && (
+                      <span className="text-primary">
+                        ✓ Variables detectadas
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
