@@ -23,8 +23,9 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { CheckCircle2, Plus } from "lucide-react";
+import { CheckCircle2, Plus, Sparkles } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
+import { ImprovePromptDialog } from "@/components/ImprovePromptDialog";
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
@@ -37,6 +38,7 @@ const Index = () => {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
+  const [showImproveDialog, setShowImproveDialog] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,9 +167,23 @@ const Index = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="prompt" className="text-foreground">
-                    Prompt
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="prompt" className="text-foreground">
+                      Prompt
+                    </Label>
+                    {promptText.trim().length > 10 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowImproveDialog(true)}
+                        className="h-7 text-xs gap-1 text-primary hover:text-primary"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Mejorar con IA
+                      </Button>
+                    )}
+                  </div>
                   <Textarea
                     id="prompt"
                     placeholder="Escribe tu prompt aquí..."
@@ -238,6 +254,15 @@ const Index = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Improve Prompt Dialog */}
+      <ImprovePromptDialog
+        open={showImproveDialog}
+        onOpenChange={setShowImproveDialog}
+        promptText={promptText}
+        category={category || "General"}
+        onApplyImprovement={(improvedText) => setPromptText(improvedText)}
+      />
     </AppLayout>
   );
 };
