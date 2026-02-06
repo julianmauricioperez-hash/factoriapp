@@ -1,9 +1,15 @@
 import { useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Menu, Download } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatMessages } from "@/components/chat/ChatMessages";
 import { ChatInput } from "@/components/chat/ChatInput";
@@ -63,6 +69,76 @@ const Chat = () => {
       setSelectedConversationId(null);
       setMessages([]);
     }
+  };
+
+  const exportConversationToMarkdown = () => {
+    if (messages.length === 0) {
+      toast({
+        title: "Sin mensajes",
+        description: "No hay mensajes para exportar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const conversation = conversations.find(c => c.id === selectedConversationId);
+    const title = conversation?.title || "Conversación";
+    const date = new Date().toLocaleDateString("es-ES");
+    
+    let markdown = `# ${title}\n\n`;
+    markdown += `*Exportado el ${date}*\n\n---\n\n`;
+    
+    messages.forEach((msg) => {
+      const role = msg.role === "user" ? "**Tú:**" : "**IA:**";
+      markdown += `${role}\n\n${msg.content}\n\n---\n\n`;
+    });
+
+    const blob = new Blob([markdown], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${title.replace(/[^a-z0-9]/gi, "_")}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "¡Exportado!",
+      description: "Conversación exportada como Markdown.",
+    });
+  };
+
+  const exportConversationToText = () => {
+    if (messages.length === 0) {
+      toast({
+        title: "Sin mensajes",
+        description: "No hay mensajes para exportar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const conversation = conversations.find(c => c.id === selectedConversationId);
+    const title = conversation?.title || "Conversación";
+    
+    let text = `${title}\n${"=".repeat(title.length)}\n\n`;
+    
+    messages.forEach((msg) => {
+      const role = msg.role === "user" ? "Tú:" : "IA:";
+      text += `${role}\n${msg.content}\n\n`;
+    });
+
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${title.replace(/[^a-z0-9]/gi, "_")}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "¡Exportado!",
+      description: "Conversación exportada como texto.",
+    });
   };
 
   const streamChat = async (allMessages: { role: string; content: string }[], model: string) => {
@@ -263,11 +339,31 @@ const Chat = () => {
               </span>
             )}
             {!isMobile && <div className="flex-1" />}
-            <ModelSelector
-              value={selectedModel}
-              onChange={setSelectedModel}
-              disabled={isLoading}
-            />
+            <div className="flex items-center gap-2">
+              {messages.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 md:mr-1" />
+                      <span className="hidden md:inline">Exportar</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-popover">
+                    <DropdownMenuItem onClick={exportConversationToMarkdown}>
+                      Exportar como Markdown
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportConversationToText}>
+                      Exportar como texto
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              <ModelSelector
+                value={selectedModel}
+                onChange={setSelectedModel}
+                disabled={isLoading}
+              />
+            </div>
           </div>
 
           <ChatMessages

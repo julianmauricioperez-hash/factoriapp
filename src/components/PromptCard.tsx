@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Star, Copy, Check, Braces, Share2, Sparkles, FolderOpen, MessageSquare } from "lucide-react";
+import { Pencil, Trash2, Star, Copy, Check, Braces, Share2, Sparkles, FolderOpen, MessageSquare, Files } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { VariableDialog, hasVariables } from "./VariableDialog";
 import { SharePromptDialog } from "./SharePromptDialog";
 import { ImprovePromptDialog } from "./ImprovePromptDialog";
 import { CollectionDialog } from "./CollectionDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Collection {
   id: string;
@@ -34,6 +35,7 @@ interface PromptCardProps {
   onShareUpdate?: (promptId: string, isPublic: boolean, slug: string | null) => void;
   onPromptUpdate?: (promptId: string, newText: string) => void;
   onCollectionUpdate?: (promptId: string, collectionId: string | null) => void;
+  onDuplicate?: (newPrompt: Prompt) => void;
   collections?: Collection[];
 }
 
@@ -45,10 +47,12 @@ export const PromptCard = ({
   onShareUpdate, 
   onPromptUpdate,
   onCollectionUpdate,
+  onDuplicate,
   collections = []
 }: PromptCardProps) => {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
   const [showVariableDialog, setShowVariableDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showImproveDialog, setShowImproveDialog] = useState(false);
@@ -76,6 +80,55 @@ export const PromptCard = ({
   const handleCollectionUpdate = (collectionId: string | null) => {
     if (onCollectionUpdate) {
       onCollectionUpdate(prompt.id, collectionId);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (duplicating) return;
+    setDuplicating(true);
+    
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        toast({
+          title: "Error",
+          description: "Debes iniciar sesión para duplicar prompts.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("prompts")
+        .insert({
+          category: prompt.category,
+          prompt_text: prompt.prompt_text,
+          is_favorite: false,
+          is_public: false,
+          user_id: userData.user.id,
+          collection_id: prompt.collection_id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (onDuplicate && data) {
+        onDuplicate(data);
+      }
+
+      toast({
+        title: "¡Duplicado!",
+        description: "El prompt se duplicó correctamente.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "No se pudo duplicar el prompt.",
+        variant: "destructive",
+      });
+    } finally {
+      setDuplicating(false);
     }
   };
 
@@ -207,7 +260,7 @@ export const PromptCard = ({
                 title={promptHasVars ? "Completar variables y copiar" : "Copiar"}
               >
                 {copied ? (
-                  <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
+                  <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-success" />
                 ) : (
                   <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 )}
@@ -216,7 +269,18 @@ export const PromptCard = ({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 sm:h-8 sm:w-8"
+                onClick={handleDuplicate}
+                disabled={duplicating}
+                title="Duplicar prompt"
+              >
+                <Files className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={() => onEdit(prompt)}
+                title="Editar"
               >
                 <Pencil className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
