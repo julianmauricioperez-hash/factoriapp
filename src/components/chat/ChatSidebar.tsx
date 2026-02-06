@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Plus, MessageSquare, Trash2, Pencil, Check, X } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, MessageSquare, Trash2, Pencil, Check, X, Filter, Tag as TagIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,6 +13,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatConversation } from "@/hooks/useChatConversations";
 import { ChatTagsInput } from "./ChatTagsInput";
 import { cn } from "@/lib/utils";
@@ -55,6 +62,32 @@ export function ChatSidebar({
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [selectedFilterTags, setSelectedFilterTags] = useState<string[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  // Filter conversations by selected tags
+  const filteredConversations = useMemo(() => {
+    if (selectedFilterTags.length === 0) return conversations;
+    
+    return conversations.filter((conv) => {
+      const chatTags = getTagsForChat(conv.id);
+      return selectedFilterTags.every((tagId) =>
+        chatTags.some((t) => t.id === tagId)
+      );
+    });
+  }, [conversations, selectedFilterTags, getTagsForChat]);
+
+  const toggleFilterTag = (tagId: string) => {
+    setSelectedFilterTags((prev) =>
+      prev.includes(tagId)
+        ? prev.filter((id) => id !== tagId)
+        : [...prev, tagId]
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedFilterTags([]);
+  };
 
   const handleDeleteClick = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -94,11 +127,94 @@ export function ChatSidebar({
   return (
     <>
       <div className="flex flex-col h-full border-r bg-muted/30">
-        <div className="p-3 border-b">
+        <div className="p-3 border-b space-y-2">
           <Button onClick={onNew} className="w-full gap-2" size="sm">
             <Plus className="h-4 w-4" />
             Nuevo chat
           </Button>
+          
+          {/* Tag filter */}
+          <div className="flex items-center gap-1">
+            <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={selectedFilterTags.length > 0 ? "secondary" : "outline"}
+                  size="sm"
+                  className="flex-1 justify-start gap-2 h-8"
+                >
+                  <Filter className="h-3.5 w-3.5" />
+                  <span className="truncate text-xs">
+                    {selectedFilterTags.length > 0
+                      ? `${selectedFilterTags.length} filtro${selectedFilterTags.length > 1 ? "s" : ""}`
+                      : "Filtrar"}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="start">
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  Filtrar por etiquetas
+                </p>
+                <ScrollArea className="max-h-40">
+                  <div className="space-y-1">
+                    {availableTags.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-2">
+                        Sin etiquetas
+                      </p>
+                    ) : (
+                      availableTags.map((tag) => (
+                        <button
+                          key={tag.id}
+                          onClick={() => toggleFilterTag(tag.id)}
+                          className={cn(
+                            "w-full text-left px-2 py-1.5 text-sm rounded flex items-center gap-2",
+                            selectedFilterTags.includes(tag.id)
+                              ? "bg-primary/10 text-primary"
+                              : "hover:bg-muted"
+                          )}
+                        >
+                          <TagIcon className="h-3 w-3" />
+                          {tag.name}
+                          {selectedFilterTags.includes(tag.id) && (
+                            <Check className="h-3 w-3 ml-auto" />
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
+            {selectedFilterTags.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={clearFilters}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+          
+          {/* Active filter badges */}
+          {selectedFilterTags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {selectedFilterTags.map((tagId) => {
+                const tag = availableTags.find((t) => t.id === tagId);
+                return tag ? (
+                  <Badge
+                    key={tag.id}
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 gap-0.5 cursor-pointer hover:bg-destructive/20"
+                    onClick={() => toggleFilterTag(tag.id)}
+                  >
+                    {tag.name}
+                    <X className="h-2.5 w-2.5" />
+                  </Badge>
+                ) : null;
+              })}
+            </div>
+          )}
         </div>
         
         <div className="flex-1 overflow-y-auto">
@@ -107,12 +223,14 @@ export function ChatSidebar({
               <div className="p-4 text-center text-sm text-muted-foreground">
                 Cargando...
               </div>
-            ) : conversations.length === 0 ? (
+            ) : filteredConversations.length === 0 ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                Sin conversaciones
+                {selectedFilterTags.length > 0
+                  ? "Sin conversaciones con esas etiquetas"
+                  : "Sin conversaciones"}
               </div>
             ) : (
-              conversations.map((conv) => (
+              filteredConversations.map((conv) => (
                 <div
                   key={conv.id}
                   className={cn(
