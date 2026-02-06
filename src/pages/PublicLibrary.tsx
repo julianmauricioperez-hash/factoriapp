@@ -50,6 +50,14 @@ const PublicLibrary = () => {
       }
     });
 
+  const hasActiveFilters = searchQuery !== "" || filterCategory !== "all";
+  const isFiltered = filteredPrompts.length !== prompts.length;
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterCategory("all");
+  };
+
   const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);
     toast({
@@ -126,6 +134,35 @@ const PublicLibrary = () => {
               <SelectItem value="category-desc">Categoría Z-A</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Results counter and active filters indicator */}
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">
+              {filteredPrompts.length === 0 ? (
+                "Sin resultados"
+              ) : filteredPrompts.length === 1 ? (
+                "1 prompt encontrado"
+              ) : (
+                `${filteredPrompts.length} prompts encontrados`
+              )}
+              {isFiltered && prompts.length > 0 && (
+                <span className="text-muted-foreground/70"> de {prompts.length}</span>
+              )}
+            </p>
+          </div>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-7 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="mr-1 h-3 w-3" />
+              Limpiar filtros
+            </Button>
+          )}
         </div>
 
         {filteredPrompts.length === 0 ? (
