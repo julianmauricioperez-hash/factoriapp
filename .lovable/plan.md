@@ -1,76 +1,57 @@
 
 
-## Mejoras a la Biblioteca Publica
+## Ver prompts al hacer clic en una etiqueta
 
-Tres mejoras seleccionadas para enriquecer la experiencia en la Biblioteca Publica de Factoria.
-
----
-
-### 1. Guardar prompts en tu coleccion
-
-Permite que los usuarios autenticados guarden un prompt publico directamente como uno propio (copia privada).
-
-- Se agrega un boton "Guardar" (icono de bookmark/download) en cada tarjeta de prompt publico.
-- Al hacer clic, se crea una copia del prompt en la tabla `prompts` con el `user_id` del usuario actual, `is_public = false` y `is_favorite = false`.
-- Si el usuario no esta autenticado, se muestra un aviso y se redirige a `/auth`.
-- Se muestra un toast confirmando "Prompt guardado en tus prompts".
+Similar a como funciona en Colecciones, al hacer clic en una etiqueta se abrira un Dialog (modal) mostrando todos los prompts que tienen esa etiqueta asignada.
 
 ---
 
-### 2. Vista previa expandible
+### Comportamiento
 
-Actualmente los prompts se muestran truncados a 4 lineas (`line-clamp-4`). Con esta mejora:
-
-- Al hacer clic en una tarjeta, se abre un **Dialog (modal)** con el texto completo del prompt.
+- Al hacer clic en el nombre de una etiqueta (o en su fila), se abre un modal con los prompts asociados.
 - El modal muestra:
-  - Categoria como badge
-  - Texto completo del prompt (scroll si es largo)
-  - Fecha de creacion
-  - Etiquetas del prompt (si las tiene)
-  - Botones de accion: Copiar, Guardar, Like, Compartir enlace
-- Se puede cerrar con X o haciendo clic fuera.
-
----
-
-### 3. Etiquetas visibles y filtrables
-
-Mostrar las etiquetas de los prompts publicos y permitir filtrar por ellas.
-
-**Cambio en base de datos:**
-- Se necesita una nueva politica RLS en `prompt_tags` que permita a cualquiera leer las etiquetas de prompts publicos:
-  ```
-  SELECT en prompt_tags WHERE el prompt asociado es publico (is_public = true)
-  ```
-- Tambien se necesita una politica RLS en `tags` para que cualquiera pueda ver etiquetas que estan asociadas a prompts publicos.
-
-**En la interfaz:**
-- Cada tarjeta de prompt muestra sus etiquetas como badges debajo del texto.
-- Se agrega una barra de filtro por etiquetas en la parte superior (similar al `TagsFilter` existente en Mis Prompts).
-- Las etiquetas disponibles en el filtro se extraen de los prompts publicos cargados.
+  - El nombre de la etiqueta con su color en el encabezado.
+  - La lista de prompts usando el componente `PromptCard` existente (mismo que en Colecciones).
+  - Un mensaje si la etiqueta no tiene prompts asignados.
+  - Un boton para cerrar el modal.
+- Desde el modal se pueden realizar las mismas acciones que en Colecciones: editar, copiar, favorito, etc.
+- Los botones de editar nombre/eliminar etiqueta siguen funcionando igual (no se ve afectada la funcionalidad existente).
 
 ---
 
 ### Detalles tecnicos
 
-**Migracion SQL (nueva):**
-- Agregar politica RLS SELECT en `prompt_tags` para permitir lectura publica cuando el prompt es publico.
-- Agregar politica RLS SELECT en `tags` para permitir lectura de etiquetas asociadas a prompts publicos.
+**Archivo a modificar: `src/pages/Tags.tsx`**
 
-**Hook `usePublicPrompts.ts` - Modificar:**
-- Extender la consulta para incluir las etiquetas de cada prompt via la relacion `prompt_tags -> tags`.
-- Actualizar la interfaz `PublicPrompt` para incluir un array de tags (`{ id, name, color }`).
+1. Agregar estados nuevos:
+   - `viewingTag`: la etiqueta seleccionada (tipo `TagWithUsage | null`).
+   - `tagPrompts`: array de prompts cargados para esa etiqueta.
+   - `loadingPrompts`: booleano de carga.
 
-**Pagina `PublicLibrary.tsx` - Modificar:**
-- Agregar boton "Guardar" en cada tarjeta (con logica de insercion en `prompts`).
-- Agregar componente de modal/dialog para vista expandida del prompt.
-- Agregar seccion de etiquetas en cada tarjeta y barra de filtro de etiquetas.
-- Agregar estado para etiquetas seleccionadas y logica de filtrado.
+2. Funcion `fetchTagPrompts(tagId)`:
+   - Consulta a `prompt_tags` filtrando por `tag_id`, haciendo join con `prompts` para obtener los datos completos del prompt.
+   - Ordena por fecha descendente.
 
-**Archivos a crear:**
-- Ninguno nuevo (se reutilizan componentes existentes como `Dialog`, `Badge`, `TagsFilter`).
+3. Handler `handleViewTag(tag)`:
+   - Asigna la etiqueta al estado `viewingTag`.
+   - Llama a `fetchTagPrompts(tag.id)`.
 
-**Archivos a modificar:**
-- `src/hooks/usePublicPrompts.ts` - Incluir tags en la consulta.
-- `src/pages/PublicLibrary.tsx` - Boton guardar, modal de vista previa, filtro de etiquetas.
-- Migracion SQL para las nuevas politicas RLS.
+4. Hacer la fila de cada etiqueta clickeable:
+   - Agregar `onClick={() => handleViewTag(tag)}` al contenedor de la fila.
+   - Asegurar que los clicks en los botones de editar/eliminar/color usen `e.stopPropagation()` para no abrir el modal.
+   - Agregar `cursor-pointer` a la fila y un icono `ChevronRight` al final (como en Colecciones).
+
+5. Agregar un `Dialog` al final del componente:
+   - Muestra el nombre y color de la etiqueta en el encabezado.
+   - Lista los prompts con `PromptCard` (version simplificada, similar a Colecciones).
+   - Incluye acciones basicas: toggle favorito, editar texto del prompt.
+   - Estado vacio con icono y mensaje descriptivo.
+
+6. Imports adicionales:
+   - `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogFooter` de `@/components/ui/dialog`.
+   - `ChevronRight` de `lucide-react`.
+   - `PromptCard` de `@/components/PromptCard`.
+   - `supabase` de `@/integrations/supabase/client`.
+
+**No se requieren cambios en la base de datos** ya que la relacion `prompt_tags` y las politicas RLS necesarias ya existen.
 
