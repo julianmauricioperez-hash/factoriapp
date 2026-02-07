@@ -1,5 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import logoSrc from "@/assets/Logo.svg";
+import { useTheme } from "next-themes";
+import logoLight from "@/assets/Logo.svg";
+import logoDark from "@/assets/LogoDark.svg";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -26,6 +28,8 @@ export function AppHeader({ title, showBackButton }: AppHeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, loading } = useAuth();
+  const { resolvedTheme } = useTheme();
+  const logoSrc = resolvedTheme === "dark" ? logoDark : logoLight;
 
   const handleSignOut = async () => {
     await signOut();
