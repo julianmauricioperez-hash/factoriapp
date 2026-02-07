@@ -113,15 +113,6 @@ export function ChatMessages({ messages, streamingContent, isLoading }: ChatMess
                     )}
                     {copiedId === message.id ? "Copiado" : "Copiar"}
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
-                    onClick={() => handleSavePrompt(message.content)}
-                  >
-                    <BookmarkPlus className="h-3 w-3 mr-1" />
-                    Guardar
-                  </Button>
                 </div>
               </div>
               {message.role === "user" && (
