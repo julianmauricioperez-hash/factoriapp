@@ -15,12 +15,14 @@ import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatMessages } from "@/components/chat/ChatMessages";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ModelSelector } from "@/components/chat/ModelSelector";
+import { ChatAttachment } from "@/components/chat/AttachmentPreview";
 import { useChatConversations, ChatMessage } from "@/hooks/useChatConversations";
 import { useChatTags } from "@/hooks/useChatTags";
 import { useTags } from "@/hooks/useTags";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
@@ -57,6 +59,7 @@ const Chat = () => {
   const [streamingContent, setStreamingContent] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState("google/gemini-3-flash-preview");
+  const [messageAttachments, setMessageAttachments] = useState<Record<string, { type: string; url: string; name: string }[]>>({});
 
   // Get initial prompt from URL params
   const initialPrompt = searchParams.get("prompt") || "";
@@ -66,6 +69,30 @@ const Chat = () => {
     setMessages(msgs);
     setSelectedConversationId(id);
     setSidebarOpen(false);
+    
+    // Load attachments for this conversation's messages
+    if (msgs.length > 0) {
+      const messageIds = msgs.map(m => m.id);
+      const { data: attachments } = await supabase
+        .from("chat_attachments")
+        .select("*")
+        .in("message_id", messageIds);
+      
+      if (attachments && attachments.length > 0) {
+        const attMap: Record<string, { type: string; url: string; name: string }[]> = {};
+        attachments.forEach((att: any) => {
+          if (!attMap[att.message_id]) attMap[att.message_id] = [];
+          attMap[att.message_id].push({
+            type: att.file_type,
+            url: att.file_url,
+            name: att.file_name,
+          });
+        });
+        setMessageAttachments(attMap);
+      } else {
+        setMessageAttachments({});
+      }
+    }
   }, [getMessages]);
 
   const handleNewConversation = async () => {
@@ -73,6 +100,7 @@ const Chat = () => {
     if (id) {
       setSelectedConversationId(id);
       setMessages([]);
+      setMessageAttachments({});
       setSidebarOpen(false);
     }
   };
@@ -82,31 +110,23 @@ const Chat = () => {
     if (selectedConversationId === id) {
       setSelectedConversationId(null);
       setMessages([]);
+      setMessageAttachments({});
     }
   };
 
   const exportConversationToMarkdown = () => {
     if (messages.length === 0) {
-      toast({
-        title: "Sin mensajes",
-        description: "No hay mensajes para exportar.",
-        variant: "destructive",
-      });
+      toast({ title: "Sin mensajes", description: "No hay mensajes para exportar.", variant: "destructive" });
       return;
     }
-
     const conversation = conversations.find(c => c.id === selectedConversationId);
     const title = conversation?.title || "Conversación";
     const date = new Date().toLocaleDateString("es-ES");
-    
-    let markdown = `# ${title}\n\n`;
-    markdown += `*Exportado el ${date}*\n\n---\n\n`;
-    
+    let markdown = `# ${title}\n\n*Exportado el ${date}*\n\n---\n\n`;
     messages.forEach((msg) => {
       const role = msg.role === "user" ? "**Tú:**" : "**IA:**";
       markdown += `${role}\n\n${msg.content}\n\n---\n\n`;
     });
-
     const blob = new Blob([markdown], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -114,33 +134,21 @@ const Chat = () => {
     link.download = `${title.replace(/[^a-z0-9]/gi, "_")}.md`;
     link.click();
     URL.revokeObjectURL(url);
-    
-    toast({
-      title: "¡Exportado!",
-      description: "Conversación exportada como Markdown.",
-    });
+    toast({ title: "¡Exportado!", description: "Conversación exportada como Markdown." });
   };
 
   const exportConversationToText = () => {
     if (messages.length === 0) {
-      toast({
-        title: "Sin mensajes",
-        description: "No hay mensajes para exportar.",
-        variant: "destructive",
-      });
+      toast({ title: "Sin mensajes", description: "No hay mensajes para exportar.", variant: "destructive" });
       return;
     }
-
     const conversation = conversations.find(c => c.id === selectedConversationId);
     const title = conversation?.title || "Conversación";
-    
     let text = `${title}\n${"=".repeat(title.length)}\n\n`;
-    
     messages.forEach((msg) => {
       const role = msg.role === "user" ? "Tú:" : "IA:";
       text += `${role}\n${msg.content}\n\n`;
     });
-
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -148,14 +156,51 @@ const Chat = () => {
     link.download = `${title.replace(/[^a-z0-9]/gi, "_")}.txt`;
     link.click();
     URL.revokeObjectURL(url);
+    toast({ title: "¡Exportado!", description: "Conversación exportada como texto." });
+  };
+
+  // Upload a file to storage and return the public URL
+  const uploadAttachment = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+    const ext = file.name.split(".").pop() || "bin";
+    const filePath = `${user.id}/${crypto.randomUUID()}.${ext}`;
     
-    toast({
-      title: "¡Exportado!",
-      description: "Conversación exportada como texto.",
+    const { error } = await supabase.storage
+      .from("chat-attachments")
+      .upload(filePath, file);
+    
+    if (error) {
+      console.error("Upload error:", error);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from("chat-attachments")
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
+  // Read document text content
+  const readDocumentText = async (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string || "");
+      reader.onerror = () => resolve("");
+      reader.readAsText(file);
     });
   };
 
-  const streamChat = async (allMessages: { role: string; content: string }[], model: string) => {
+  // Convert file to base64 data URL for multimodal
+  const fileToBase64DataUrl = async (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const streamChat = async (allMessages: any[], model: string) => {
     const response = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
@@ -167,12 +212,8 @@ const Chat = () => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      if (response.status === 429) {
-        throw new Error("Límite de solicitudes excedido. Intenta de nuevo en unos minutos.");
-      }
-      if (response.status === 402) {
-        throw new Error("Créditos de IA agotados.");
-      }
+      if (response.status === 429) throw new Error("Límite de solicitudes excedido. Intenta de nuevo en unos minutos.");
+      if (response.status === 402) throw new Error("Créditos de IA agotados.");
       throw new Error(errorData.error || "Error al conectar con la IA");
     }
 
@@ -186,21 +227,16 @@ const Chat = () => {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-
       textBuffer += decoder.decode(value, { stream: true });
-
       let newlineIndex: number;
       while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
         let line = textBuffer.slice(0, newlineIndex);
         textBuffer = textBuffer.slice(newlineIndex + 1);
-
         if (line.endsWith("\r")) line = line.slice(0, -1);
         if (line.startsWith(":") || line.trim() === "") continue;
         if (!line.startsWith("data: ")) continue;
-
         const jsonStr = line.slice(6).trim();
         if (jsonStr === "[DONE]") break;
-
         try {
           const parsed = JSON.parse(jsonStr);
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
@@ -218,13 +254,9 @@ const Chat = () => {
     return fullContent;
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, attachments?: ChatAttachment[]) => {
     if (!user) {
-      toast({
-        title: "Inicia sesión",
-        description: "Necesitas iniciar sesión para usar el chat.",
-        variant: "destructive",
-      });
+      toast({ title: "Inicia sesión", description: "Necesitas iniciar sesión para usar el chat.", variant: "destructive" });
       navigate("/auth");
       return;
     }
@@ -236,31 +268,99 @@ const Chat = () => {
       const title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
       conversationId = await createConversation(title);
       if (!conversationId) {
-        toast({
-          title: "Error",
-          description: "No se pudo crear la conversación.",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "No se pudo crear la conversación.", variant: "destructive" });
         return;
       }
       setSelectedConversationId(conversationId);
     }
 
-    // Add user message
-    const userMessage = await addMessage(conversationId, "user", content);
+    // Process attachments
+    let imageUrls: string[] = [];
+    let imageDataUrls: string[] = [];
+    let documentTexts: string[] = [];
+    let messageContent = content;
+
+    if (attachments && attachments.length > 0) {
+      for (const attachment of attachments) {
+        if (attachment.type === "image") {
+          // Upload image to storage
+          const publicUrl = await uploadAttachment(attachment.file);
+          if (publicUrl) {
+            imageUrls.push(publicUrl);
+            // Get base64 for sending to AI
+            const dataUrl = await fileToBase64DataUrl(attachment.file);
+            imageDataUrls.push(dataUrl);
+          }
+        } else if (attachment.type === "document") {
+          const text = await readDocumentText(attachment.file);
+          if (text) {
+            documentTexts.push(`[Documento: ${attachment.file.name}]\n${text}`);
+          }
+        }
+      }
+
+      // Append document texts to message content
+      if (documentTexts.length > 0) {
+        messageContent = (content || "Analiza este documento:") + "\n\n" + documentTexts.join("\n\n");
+      }
+    }
+
+    // Add user message to DB
+    const userMessage = await addMessage(conversationId, "user", messageContent);
     if (!userMessage) return;
+
+    // Save attachment records
+    if (imageUrls.length > 0) {
+      const attRecords = imageUrls.map((url, i) => ({
+        message_id: userMessage.id,
+        file_type: "image" as const,
+        file_name: attachments![i].file.name,
+        file_url: url,
+      }));
+      
+      await supabase.from("chat_attachments").insert(attRecords);
+      
+      setMessageAttachments(prev => ({
+        ...prev,
+        [userMessage.id]: attRecords.map(r => ({ type: r.file_type, url: r.file_url, name: r.file_name })),
+      }));
+    }
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     setStreamingContent("");
 
     try {
-      const allMessages = [...messages, userMessage].map(m => ({
+      // Build messages array for AI
+      const historyMessages = [...messages, userMessage].map(m => ({
         role: m.role,
         content: m.content,
       }));
 
-      const assistantContent = await streamChat(allMessages, selectedModel);
+      // If we have images, make the last user message multimodal
+      if (imageDataUrls.length > 0) {
+        const lastIdx = historyMessages.length - 1;
+        const lastMsg = historyMessages[lastIdx];
+        const contentArray: any[] = [];
+        
+        if (lastMsg.content) {
+          contentArray.push({ type: "text", text: lastMsg.content });
+        }
+        
+        imageDataUrls.forEach(dataUrl => {
+          contentArray.push({
+            type: "image_url",
+            image_url: { url: dataUrl },
+          });
+        });
+
+        historyMessages[lastIdx] = {
+          role: lastMsg.role,
+          content: contentArray as any,
+        };
+      }
+
+      const assistantContent = await streamChat(historyMessages, selectedModel);
 
       // Save assistant message
       const assistantMessage = await addMessage(conversationId, "assistant", assistantContent);
@@ -270,7 +370,7 @@ const Chat = () => {
 
       // Update title if first message
       if (messages.length === 0) {
-        const title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
+        const title = (content || "Imagen adjunta").slice(0, 50) + ((content || "").length > 50 ? "..." : "");
         await updateConversationTitle(conversationId, title);
       }
     } catch (error) {
@@ -407,6 +507,7 @@ const Chat = () => {
             messages={messages}
             streamingContent={streamingContent}
             isLoading={isLoading}
+            messageAttachments={messageAttachments}
           />
 
           <ChatInput
