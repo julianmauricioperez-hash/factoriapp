@@ -494,6 +494,26 @@ const MyPrompts = () => {
                 onToggleTag={toggleTagFilter}
               />
             )}
+
+            {/* Reset Filters */}
+            {(searchQuery || filterCategory !== "all" || filterCollection !== "all" || showFavoritesOnly || selectedTagIds.length > 0) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-muted-foreground"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilterCategory("all");
+                  setFilterCollection("all");
+                  setShowFavoritesOnly(false);
+                  setSelectedTagIds([]);
+                  setSortOption("date-desc");
+                }}
+              >
+                <X className="mr-1 h-4 w-4" />
+                Restablecer filtros
+              </Button>
+            )}
           </div>
         )}
 
