@@ -14,46 +14,91 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useTags } from "@/hooks/useTags";
+import { useTags, TagWithUsage } from "@/hooks/useTags";
 import { AppLayout } from "@/components/AppLayout";
-import { Tag, Plus, Trash2, Search, X, Loader2 } from "lucide-react";
+import { COLLECTION_COLORS, getColorClasses } from "@/lib/collectionColors";
+import {
+  Tag,
+  Plus,
+  Trash2,
+  Search,
+  X,
+  Loader2,
+  Pencil,
+  Check,
+  Palette,
+  ArrowUpDown,
+  FileText,
+  MessageSquare,
+} from "lucide-react";
+
+type SortOption = "name-asc" | "name-desc" | "date" | "usage";
 
 const Tags = () => {
   const { user, loading: authLoading } = useAuth();
-  const { tags, loading, createTag, deleteTag, refetch } = useTags();
+  const { tagsWithUsage, loading, createTag, updateTag, deleteTag, refetch } = useTags();
   const navigate = useNavigate();
-  
+
   const [newTagName, setNewTagName] = useState("");
+  const [newTagColor, setNewTagColor] = useState("slate");
   const [searchQuery, setSearchQuery] = useState("");
   const [creating, setCreating] = useState(false);
   const [deletingTag, setDeletingTag] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("name-asc");
 
-  // Redirect if not authenticated
   if (!authLoading && !user) {
     navigate("/auth");
     return null;
   }
 
-  const filteredTags = tags.filter((tag) =>
-    tag.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTags = tagsWithUsage
+    .filter((tag) => tag.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc":
+          return a.name.localeCompare(b.name);
+        case "name-desc":
+          return b.name.localeCompare(a.name);
+        case "date":
+          return 0; // already ordered by creation
+        case "usage":
+          return (b.promptCount + b.chatCount) - (a.promptCount + a.chatCount);
+        default:
+          return 0;
+      }
+    });
 
   const handleCreateTag = async () => {
     if (!newTagName.trim()) return;
-    
+
     setCreating(true);
-    const result = await createTag(newTagName.trim());
+    const result = await createTag(newTagName.trim(), newTagColor);
     setCreating(false);
-    
+
     if (result) {
       toast({
         title: "¡Etiqueta creada!",
         description: `La etiqueta "${result.name}" se creó correctamente.`,
       });
       setNewTagName("");
+      setNewTagColor("slate");
     } else {
       toast({
         title: "Error",
@@ -65,11 +110,11 @@ const Tags = () => {
 
   const handleDeleteTag = async () => {
     if (!deletingTag) return;
-    
+
     setDeleting(true);
     const success = await deleteTag(deletingTag.id);
     setDeleting(false);
-    
+
     if (success) {
       toast({
         title: "Etiqueta eliminada",
@@ -85,10 +130,44 @@ const Tags = () => {
     setDeletingTag(null);
   };
 
+  const handleStartEdit = (tag: TagWithUsage) => {
+    setEditingTag(tag.id);
+    setEditName(tag.name);
+  };
+
+  const handleSaveEdit = async (tagId: string) => {
+    if (!editName.trim()) return;
+
+    const success = await updateTag(tagId, { name: editName.trim() });
+    if (success) {
+      toast({ title: "Etiqueta actualizada", description: "El nombre se actualizó correctamente." });
+    } else {
+      toast({ title: "Error", description: "No se pudo actualizar la etiqueta.", variant: "destructive" });
+    }
+    setEditingTag(null);
+  };
+
+  const handleColorChange = async (tagId: string, color: string) => {
+    const success = await updateTag(tagId, { color });
+    if (!success) {
+      toast({ title: "Error", description: "No se pudo cambiar el color.", variant: "destructive" });
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && newTagName.trim()) {
       e.preventDefault();
       handleCreateTag();
+    }
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent, tagId: string) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSaveEdit(tagId);
+    }
+    if (e.key === "Escape") {
+      setEditingTag(null);
     }
   };
 
@@ -123,6 +202,27 @@ const Tags = () => {
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
+              {/* Color picker for new tag */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon" className="shrink-0">
+                    <div className={`w-4 h-4 rounded-full ${getColorClasses(newTagColor).bg}`} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="start">
+                  <div className="grid grid-cols-6 gap-2">
+                    {COLLECTION_COLORS.map((color) => (
+                      <button
+                        key={color.name}
+                        className={`w-7 h-7 rounded-full ${color.bg} transition-transform hover:scale-110 ${
+                          newTagColor === color.name ? "ring-2 ring-offset-2 ring-primary" : ""
+                        }`}
+                        onClick={() => setNewTagColor(color.name)}
+                      />
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Input
                 placeholder="Nombre de la etiqueta..."
                 value={newTagName}
@@ -148,29 +248,42 @@ const Tags = () => {
           </CardContent>
         </Card>
 
-        {/* Search */}
-        {tags.length > 0 && (
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar etiquetas..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9 bg-background"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+        {/* Search + Sort */}
+        {tagsWithUsage.length > 0 && (
+          <div className="flex gap-2 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar etiquetas..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9 bg-background"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+              <SelectTrigger className="w-[160px] shrink-0">
+                <ArrowUpDown className="h-4 w-4 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">Nombre A-Z</SelectItem>
+                <SelectItem value="name-desc">Nombre Z-A</SelectItem>
+                <SelectItem value="usage">Más usadas</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         )}
 
         {/* Tags list */}
-        {tags.length === 0 ? (
+        {tagsWithUsage.length === 0 ? (
           <Card className="border shadow-sm">
             <CardContent className="py-12 text-center">
               <Tag className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -193,33 +306,112 @@ const Tags = () => {
         ) : (
           <Card className="border shadow-sm">
             <CardContent className="py-4">
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {filteredTags.map((tag, index) => (
                   <div
                     key={tag.id}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in"
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in group"
                     style={{ animationDelay: `${index * 30}ms`, animationFillMode: "backwards" }}
                   >
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="text-sm">
-                        {tag.name}
-                      </Badge>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {/* Color dot with picker */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className={`w-3.5 h-3.5 rounded-full shrink-0 ${getColorClasses(tag.color).bg} transition-transform hover:scale-125`} />
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-3" align="start">
+                          <div className="grid grid-cols-6 gap-2">
+                            {COLLECTION_COLORS.map((color) => (
+                              <button
+                                key={color.name}
+                                className={`w-7 h-7 rounded-full ${color.bg} transition-transform hover:scale-110 ${
+                                  tag.color === color.name ? "ring-2 ring-offset-2 ring-primary" : ""
+                                }`}
+                                onClick={() => handleColorChange(tag.id, color.name)}
+                              />
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+
+                      {/* Name (editable) */}
+                      {editingTag === tag.id ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <Input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onKeyDown={(e) => handleEditKeyDown(e, tag.id)}
+                            className="h-8 text-sm"
+                            autoFocus
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-primary"
+                            onClick={() => handleSaveEdit(tag.id)}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setEditingTag(null)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-medium truncate">{tag.name}</span>
+                      )}
+
+                      {/* Usage badges */}
+                      {editingTag !== tag.id && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          {tag.promptCount > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <FileText className="h-3 w-3" />
+                              {tag.promptCount}
+                            </span>
+                          )}
+                          {tag.chatCount > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <MessageSquare className="h-3 w-3" />
+                              {tag.chatCount}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => setDeletingTag(tag)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+
+                    {/* Actions */}
+                    {editingTag !== tag.id && (
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleStartEdit(tag)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeletingTag(tag)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-              
+
               <div className="mt-4 pt-4 border-t text-center">
                 <p className="text-sm text-muted-foreground">
-                  {tags.length} {tags.length === 1 ? "etiqueta" : "etiquetas"} en total
+                  {tagsWithUsage.length} {tagsWithUsage.length === 1 ? "etiqueta" : "etiquetas"} en total
                 </p>
               </div>
             </CardContent>

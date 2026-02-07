@@ -2,9 +2,15 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
-interface Tag {
+export interface Tag {
   id: string;
   name: string;
+  color: string;
+}
+
+export interface TagWithUsage extends Tag {
+  promptCount: number;
+  chatCount: number;
 }
 
 interface PromptTag {
@@ -16,6 +22,7 @@ interface PromptTag {
 export function useTags() {
   const { user } = useAuth();
   const [tags, setTags] = useState<Tag[]>([]);
+  const [tagUsage, setTagUsage] = useState<Map<string, { promptCount: number; chatCount: number }>>(new Map());
   const [promptTags, setPromptTags] = useState<Map<string, Tag[]>>(new Map());
   const [loading, setLoading] = useState(true);
 
@@ -29,15 +36,53 @@ export function useTags() {
     try {
       const { data, error } = await supabase
         .from("tags")
-        .select("id, name")
+        .select("id, name, color")
         .order("name");
 
       if (error) throw error;
-      setTags(data || []);
+      setTags((data || []).map((t: any) => ({ ...t, color: t.color || "slate" })));
     } catch (error) {
       console.error("Error fetching tags:", error);
     } finally {
       setLoading(false);
+    }
+  }, [user]);
+
+  const fetchTagUsage = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      // Fetch prompt_tags counts
+      const { data: promptTagData, error: ptError } = await supabase
+        .from("prompt_tags")
+        .select("tag_id");
+
+      if (ptError) throw ptError;
+
+      // Fetch chat_tags counts
+      const { data: chatTagData, error: ctError } = await supabase
+        .from("chat_tags")
+        .select("tag_id");
+
+      if (ctError) throw ctError;
+
+      const usageMap = new Map<string, { promptCount: number; chatCount: number }>();
+
+      (promptTagData || []).forEach((pt: any) => {
+        const existing = usageMap.get(pt.tag_id) || { promptCount: 0, chatCount: 0 };
+        existing.promptCount++;
+        usageMap.set(pt.tag_id, existing);
+      });
+
+      (chatTagData || []).forEach((ct: any) => {
+        const existing = usageMap.get(ct.tag_id) || { promptCount: 0, chatCount: 0 };
+        existing.chatCount++;
+        usageMap.set(ct.tag_id, existing);
+      });
+
+      setTagUsage(usageMap);
+    } catch (error) {
+      console.error("Error fetching tag usage:", error);
     }
   }, [user]);
 
@@ -50,7 +95,7 @@ export function useTags() {
         .select(`
           prompt_id,
           tag_id,
-          tag:tags(id, name)
+          tag:tags(id, name, color)
         `)
         .in("prompt_id", promptIds);
 
@@ -60,7 +105,7 @@ export function useTags() {
       (data || []).forEach((pt: any) => {
         const existing = tagMap.get(pt.prompt_id) || [];
         if (pt.tag) {
-          existing.push(pt.tag);
+          existing.push({ ...pt.tag, color: pt.tag.color || "slate" });
         }
         tagMap.set(pt.prompt_id, existing);
       });
@@ -72,32 +117,54 @@ export function useTags() {
 
   useEffect(() => {
     fetchTags();
-  }, [fetchTags]);
+    fetchTagUsage();
+  }, [fetchTags, fetchTagUsage]);
 
-  const createTag = async (name: string): Promise<Tag | null> => {
+  const createTag = async (name: string, color: string = "slate"): Promise<Tag | null> => {
     if (!user) return null;
 
     const trimmedName = name.trim().toLowerCase();
     if (!trimmedName) return null;
 
-    // Check if tag already exists
     const existing = tags.find((t) => t.name.toLowerCase() === trimmedName);
     if (existing) return existing;
 
     try {
       const { data, error } = await supabase
         .from("tags")
-        .insert({ name: trimmedName, user_id: user.id })
-        .select("id, name")
+        .insert({ name: trimmedName, user_id: user.id, color })
+        .select("id, name, color")
         .single();
 
       if (error) throw error;
 
-      setTags((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
-      return data;
+      const newTag = { ...data, color: data.color || "slate" };
+      setTags((prev) => [...prev, newTag].sort((a, b) => a.name.localeCompare(b.name)));
+      return newTag;
     } catch (error) {
       console.error("Error creating tag:", error);
       return null;
+    }
+  };
+
+  const updateTag = async (tagId: string, updates: { name?: string; color?: string }): Promise<boolean> => {
+    try {
+      const updateData: any = {};
+      if (updates.name !== undefined) updateData.name = updates.name.trim().toLowerCase();
+      if (updates.color !== undefined) updateData.color = updates.color;
+
+      const { error } = await supabase.from("tags").update(updateData).eq("id", tagId);
+      if (error) throw error;
+
+      setTags((prev) =>
+        prev
+          .map((t) => (t.id === tagId ? { ...t, ...updateData } : t))
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
+      return true;
+    } catch (error) {
+      console.error("Error updating tag:", error);
+      return false;
     }
   };
 
@@ -122,7 +189,6 @@ export function useTags() {
 
       if (error) throw error;
 
-      // Update local state
       const tag = tags.find((t) => t.id === tagId);
       if (tag) {
         setPromptTags((prev) => {
@@ -149,7 +215,6 @@ export function useTags() {
 
       if (error) throw error;
 
-      // Update local state
       setPromptTags((prev) => {
         const newMap = new Map(prev);
         const existing = newMap.get(promptId) || [];
@@ -167,16 +232,28 @@ export function useTags() {
     return promptTags.get(promptId) || [];
   };
 
+  const getTagUsage = (tagId: string) => {
+    return tagUsage.get(tagId) || { promptCount: 0, chatCount: 0 };
+  };
+
+  const tagsWithUsage: TagWithUsage[] = tags.map((tag) => ({
+    ...tag,
+    ...(tagUsage.get(tag.id) || { promptCount: 0, chatCount: 0 }),
+  }));
+
   return {
     tags,
+    tagsWithUsage,
     promptTags,
     loading,
     createTag,
+    updateTag,
     deleteTag,
     addTagToPrompt,
     removeTagFromPrompt,
     getTagsForPrompt,
+    getTagUsage,
     fetchPromptTags,
-    refetch: fetchTags,
+    refetch: () => { fetchTags(); fetchTagUsage(); },
   };
 }
