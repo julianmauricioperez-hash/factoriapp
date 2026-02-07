@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,10 +27,12 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useCollections, Collection } from "@/hooks/useCollections";
 import { supabase } from "@/integrations/supabase/client";
-import { Pencil, Trash2, Plus, FolderOpen, ChevronRight, Download, FileText, X } from "lucide-react";
+import { Pencil, Trash2, Plus, FolderOpen, ChevronRight, Download, FileText, Search, X, Share2, GripVertical } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { COLLECTION_COLORS, getColorClasses } from "@/lib/collectionColors";
 import { PromptCard } from "@/components/PromptCard";
+import { CollectionStats } from "@/components/CollectionStats";
+import { ShareCollectionDialog } from "@/components/ShareCollectionDialog";
 
 interface Prompt {
   id: string;
@@ -41,6 +43,7 @@ interface Prompt {
   is_public?: boolean;
   public_slug?: string | null;
   collection_id?: string | null;
+  sort_order?: number | null;
 }
 
 const Collections = () => {
@@ -59,11 +62,28 @@ const Collections = () => {
   const [newColor, setNewColor] = useState("slate");
   const [saving, setSaving] = useState(false);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Share state
+  const [sharingCollection, setSharingCollection] = useState<Collection | null>(null);
+
+  // Drag and drop state
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
+
+  // Reset search when closing modal
+  useEffect(() => {
+    if (!viewingCollection) {
+      setSearchQuery("");
+    }
+  }, [viewingCollection]);
 
   const fetchCollectionPrompts = async (collectionId: string) => {
     setLoadingPrompts(true);
@@ -72,6 +92,7 @@ const Collections = () => {
         .from("prompts")
         .select("*")
         .eq("collection_id", collectionId)
+        .order("sort_order", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -87,6 +108,17 @@ const Collections = () => {
       setLoadingPrompts(false);
     }
   };
+
+  // Filtered prompts based on search
+  const filteredPrompts = useMemo(() => {
+    if (!searchQuery.trim()) return collectionPrompts;
+    const q = searchQuery.toLowerCase();
+    return collectionPrompts.filter(
+      (p) =>
+        p.prompt_text.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+    );
+  }, [collectionPrompts, searchQuery]);
 
   const handleViewCollection = (collection: Collection) => {
     setViewingCollection(collection);
@@ -277,7 +309,6 @@ const Collections = () => {
 
       if (error) throw error;
 
-      // Remove from current view if moved to different collection
       if (collectionId !== viewingCollection?.id) {
         setCollectionPrompts((prev) => prev.filter((p) => p.id !== promptId));
       }
@@ -312,6 +343,66 @@ const Collections = () => {
       });
     }
   };
+
+  // Share collection handlers
+  const handleShareUpdate = (isPublic: boolean, slug: string | null) => {
+    if (sharingCollection) {
+      // Update local state of the collection
+      refetch();
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = useCallback((index: number) => {
+    setDragIndex(index);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }, []);
+
+  const handleDrop = useCallback(async (dropIndex: number) => {
+    if (dragIndex === null || dragIndex === dropIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newPrompts = [...collectionPrompts];
+    const [movedItem] = newPrompts.splice(dragIndex, 1);
+    newPrompts.splice(dropIndex, 0, movedItem);
+
+    // Update sort_order for all items
+    const updatedPrompts = newPrompts.map((p, i) => ({ ...p, sort_order: i }));
+    setCollectionPrompts(updatedPrompts);
+    setDragIndex(null);
+    setDragOverIndex(null);
+
+    // Batch update in database
+    try {
+      const updates = updatedPrompts.map((p, i) =>
+        supabase.from("prompts").update({ sort_order: i } as any).eq("id", p.id)
+      );
+      await Promise.all(updates);
+    } catch (error) {
+      console.error("Error updating sort order:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el nuevo orden.",
+        variant: "destructive",
+      });
+      // Refetch to restore correct order
+      if (viewingCollection) {
+        fetchCollectionPrompts(viewingCollection.id);
+      }
+    }
+  }, [dragIndex, collectionPrompts, viewingCollection]);
 
   if (authLoading || loading) {
     return (
@@ -380,6 +471,15 @@ const Collections = () => {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
+                          onClick={(e) => { e.stopPropagation(); setSharingCollection(collection); }}
+                          title="Compartir colección"
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={(e) => { e.stopPropagation(); exportCollectionJSON(collection); }}
                           title="Exportar JSON"
                         >
@@ -424,7 +524,40 @@ const Collections = () => {
                 )}
               </DialogTitle>
             </DialogHeader>
-            <div className="py-4">
+            <div className="py-2">
+              {/* Stats section */}
+              {!loadingPrompts && collectionPrompts.length > 0 && (
+                <CollectionStats prompts={collectionPrompts} />
+              )}
+
+              {/* Search bar */}
+              {!loadingPrompts && collectionPrompts.length > 0 && (
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por texto o categoría..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-9 bg-background"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  {searchQuery && (
+                    <p className="text-xs text-muted-foreground mt-1.5 ml-1">
+                      {filteredPrompts.length} de {collectionPrompts.length} prompts
+                    </p>
+                  )}
+                </div>
+              )}
+
               {loadingPrompts ? (
                 <p className="text-center text-muted-foreground py-8">Cargando prompts...</p>
               ) : collectionPrompts.length === 0 ? (
@@ -435,19 +568,45 @@ const Collections = () => {
                     Añade prompts desde "Mis Prompts".
                   </p>
                 </div>
+              ) : filteredPrompts.length === 0 ? (
+                <div className="text-center py-8">
+                  <Search className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground">No se encontraron prompts.</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Prueba con otra búsqueda.
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {collectionPrompts.map((prompt) => (
-                    <PromptCard
+                  {filteredPrompts.map((prompt, index) => (
+                    <div
                       key={prompt.id}
-                      prompt={prompt}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      onToggleFavorite={toggleFavorite}
-                      onPromptUpdate={handlePromptUpdate}
-                      onCollectionUpdate={handleCollectionUpdateForPrompt}
-                      collections={collections}
-                    />
+                      draggable={!searchQuery}
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragEnd={handleDragEnd}
+                      onDrop={() => handleDrop(index)}
+                      className={`flex gap-2 items-start transition-opacity ${
+                        dragIndex === index ? "opacity-50" : ""
+                      } ${dragOverIndex === index && dragIndex !== index ? "border-t-2 border-primary" : ""}`}
+                    >
+                      {!searchQuery && (
+                        <div className="pt-4 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0">
+                          <GripVertical className="h-5 w-5" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <PromptCard
+                          prompt={prompt}
+                          onEdit={() => {}}
+                          onDelete={() => {}}
+                          onToggleFavorite={toggleFavorite}
+                          onPromptUpdate={handlePromptUpdate}
+                          onCollectionUpdate={handleCollectionUpdateForPrompt}
+                          collections={collections}
+                        />
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -463,6 +622,18 @@ const Collections = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Share Collection Dialog */}
+        {sharingCollection && (
+          <ShareCollectionDialog
+            open={!!sharingCollection}
+            onOpenChange={(open) => { if (!open) setSharingCollection(null); }}
+            collectionId={sharingCollection.id}
+            isPublic={(sharingCollection as any).is_public || false}
+            publicSlug={(sharingCollection as any).public_slug || null}
+            onUpdate={handleShareUpdate}
+          />
+        )}
 
         {/* Add Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>

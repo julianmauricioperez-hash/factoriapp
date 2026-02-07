@@ -12,6 +12,7 @@ import Collections from "./pages/Collections";
 import Statistics from "./pages/Statistics";
 import PublicLibrary from "./pages/PublicLibrary";
 import SharedPrompt from "./pages/SharedPrompt";
+import SharedCollection from "./pages/SharedCollection";
 import Chat from "./pages/Chat";
 import Tags from "./pages/Tags";
 import Onboarding from "./pages/Onboarding";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/tags" element={<Tags />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/p/:slug" element={<SharedPrompt />} />
+              <Route path="/c/:slug" element={<SharedCollection />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

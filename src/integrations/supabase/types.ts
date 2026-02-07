@@ -146,7 +146,9 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_public: boolean
           name: string
+          public_slug: string | null
           user_id: string
         }
         Insert: {
@@ -154,7 +156,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_public?: boolean
           name: string
+          public_slug?: string | null
           user_id: string
         }
         Update: {
@@ -162,7 +166,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_public?: boolean
           name?: string
+          public_slug?: string | null
           user_id?: string
         }
         Relationships: []
@@ -260,6 +266,7 @@ export type Database = {
           is_public: boolean
           prompt_text: string
           public_slug: string | null
+          sort_order: number | null
           user_id: string | null
         }
         Insert: {
@@ -271,6 +278,7 @@ export type Database = {
           is_public?: boolean
           prompt_text: string
           public_slug?: string | null
+          sort_order?: number | null
           user_id?: string | null
         }
         Update: {
@@ -282,6 +290,7 @@ export type Database = {
           is_public?: boolean
           prompt_text?: string
           public_slug?: string | null
+          sort_order?: number | null
           user_id?: string | null
         }
         Relationships: [
@@ -323,6 +332,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_collection_slug: { Args: never; Returns: string }
       generate_prompt_slug: { Args: never; Returns: string }
     }
     Enums: {

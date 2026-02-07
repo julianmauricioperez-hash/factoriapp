@@ -9,6 +9,8 @@ export interface Collection {
   color: string;
   created_at: string;
   prompt_count?: number;
+  is_public?: boolean;
+  public_slug?: string | null;
 }
 
 export function useCollections() {
