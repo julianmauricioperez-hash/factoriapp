@@ -14,6 +14,7 @@ export interface ChatConversation {
   id: string;
   title: string;
   is_favorite: boolean;
+  has_search_messages: boolean;
   created_at: string;
   updated_at: string;
 }

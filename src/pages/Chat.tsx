@@ -374,6 +374,14 @@ const Chat = () => {
         // Track if this message was generated in search mode
         if (searchMode) {
           setSearchModeMessages(prev => new Set(prev).add(assistantMessage.id));
+          // Mark conversation as having search messages
+          const conv = conversations.find(c => c.id === conversationId);
+          if (conv && !conv.has_search_messages) {
+            await supabase
+              .from("chat_conversations")
+              .update({ has_search_messages: true })
+              .eq("id", conversationId);
+          }
         }
       }
 

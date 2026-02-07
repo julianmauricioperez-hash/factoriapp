@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, MessageSquare, Trash2, Pencil, Check, X, Filter, Tag as TagIcon, Search, Star, ArrowUpDown } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Pencil, Check, X, Filter, Tag as TagIcon, Search, Star, ArrowUpDown, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ interface Tag {
 }
 
 type SortOption = "recent" | "oldest" | "alphabetical" | "favorites";
+type ModeFilter = "all" | "chat" | "search";
 
 interface ChatSidebarProps {
   conversations: ChatConversation[];
@@ -77,6 +78,7 @@ export function ChatSidebar({
   const [filterOpen, setFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("recent");
+  const [modeFilter, setModeFilter] = useState<ModeFilter>("all");
 
   // Filter and sort conversations
   const filteredConversations = useMemo(() => {
@@ -88,6 +90,13 @@ export function ChatSidebar({
       result = result.filter((conv) =>
         conv.title.toLowerCase().includes(query)
       );
+    }
+    
+    // Filter by mode
+    if (modeFilter === "search") {
+      result = result.filter((conv) => conv.has_search_messages);
+    } else if (modeFilter === "chat") {
+      result = result.filter((conv) => !conv.has_search_messages);
     }
     
     // Filter by selected tags
@@ -122,7 +131,7 @@ export function ChatSidebar({
     }
     
     return result;
-  }, [conversations, searchQuery, selectedFilterTags, sortOption, getTagsForChat]);
+  }, [conversations, searchQuery, selectedFilterTags, modeFilter, sortOption, getTagsForChat]);
 
   const toggleFilterTag = (tagId: string) => {
     setSelectedFilterTags((prev) =>
@@ -134,6 +143,7 @@ export function ChatSidebar({
 
   const clearFilters = () => {
     setSelectedFilterTags([]);
+    setModeFilter("all");
   };
 
   const handleDeleteClick = (e: React.MouseEvent, id: string) => {
@@ -202,11 +212,41 @@ export function ChatSidebar({
           </div>
           
           {/* Results counter */}
-          {(searchQuery || selectedFilterTags.length > 0) && (
+          {(searchQuery || selectedFilterTags.length > 0 || modeFilter !== "all") && (
             <p className="text-[11px] text-muted-foreground px-0.5">
               {filteredConversations.length} de {conversations.length} conversación{conversations.length !== 1 ? "es" : ""}
             </p>
           )}
+          
+          {/* Mode filter */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant={modeFilter === "all" ? "secondary" : "outline"}
+              size="sm"
+              className="flex-1 h-7 text-[11px] gap-1"
+              onClick={() => setModeFilter("all")}
+            >
+              Todas
+            </Button>
+            <Button
+              variant={modeFilter === "chat" ? "secondary" : "outline"}
+              size="sm"
+              className="flex-1 h-7 text-[11px] gap-1"
+              onClick={() => setModeFilter("chat")}
+            >
+              <MessageSquare className="h-3 w-3" />
+              Chat
+            </Button>
+            <Button
+              variant={modeFilter === "search" ? "secondary" : "outline"}
+              size="sm"
+              className="flex-1 h-7 text-[11px] gap-1"
+              onClick={() => setModeFilter("search")}
+            >
+              <Globe className="h-3 w-3" />
+              Búsqueda
+            </Button>
+          </div>
           
           {/* Tag filter */}
           <div className="flex items-center gap-1">
@@ -314,7 +354,11 @@ export function ChatSidebar({
               </div>
             ) : filteredConversations.length === 0 ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                {selectedFilterTags.length > 0
+                {modeFilter === "search"
+                  ? "Sin conversaciones de búsqueda"
+                  : modeFilter === "chat"
+                  ? "Sin conversaciones de chat"
+                  : selectedFilterTags.length > 0
                   ? "Sin conversaciones con esas etiquetas"
                   : "Sin conversaciones"}
               </div>
@@ -331,7 +375,11 @@ export function ChatSidebar({
                   onClick={() => !editingId && onSelect(conv.id)}
                 >
                   <div className="flex items-center gap-1.5">
-                    <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                    {conv.has_search_messages ? (
+                      <Globe className="h-4 w-4 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+                    ) : (
+                      <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                    )}
                     
                     {editingId === conv.id ? (
                       <div className="flex-1 flex items-center gap-1 min-w-0">

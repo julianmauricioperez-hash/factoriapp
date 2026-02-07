@@ -73,6 +73,7 @@ export type Database = {
       chat_conversations: {
         Row: {
           created_at: string
+          has_search_messages: boolean
           id: string
           is_favorite: boolean
           title: string
@@ -81,6 +82,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          has_search_messages?: boolean
           id?: string
           is_favorite?: boolean
           title?: string
@@ -89,6 +91,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          has_search_messages?: boolean
           id?: string
           is_favorite?: boolean
           title?: string
