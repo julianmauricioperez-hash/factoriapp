@@ -16,6 +16,7 @@ import SharedCollection from "./pages/SharedCollection";
 import Chat from "./pages/Chat";
 import Tags from "./pages/Tags";
 import Onboarding from "./pages/Onboarding";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/chat" element={<Chat />} />
               <Route path="/tags" element={<Tags />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/install" element={<Install />} />
               <Route path="/p/:slug" element={<SharedPrompt />} />
               <Route path="/c/:slug" element={<SharedCollection />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
