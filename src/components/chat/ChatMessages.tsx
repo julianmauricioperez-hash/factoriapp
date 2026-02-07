@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { User, Bot, Copy, Check, Mic } from "lucide-react";
+import { User, Bot, Copy, Check, Mic, Globe, MessageSquare } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ChatMessage } from "@/hooks/useChatConversations";
@@ -13,9 +13,11 @@ interface ChatMessagesProps {
   streamingContent?: string;
   isLoading?: boolean;
   messageAttachments?: Record<string, { type: string; url: string; name: string }[]>;
+  searchModeMessages?: Set<string>;
+  isStreamingSearchMode?: boolean;
 }
 
-export function ChatMessages({ messages, streamingContent, isLoading, messageAttachments = {} }: ChatMessagesProps) {
+export function ChatMessages({ messages, streamingContent, isLoading, messageAttachments = {}, searchModeMessages = new Set(), isStreamingSearchMode = false }: ChatMessagesProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [textToSave, setTextToSave] = useState("");
@@ -71,6 +73,7 @@ export function ChatMessages({ messages, streamingContent, isLoading, messageAtt
           {messages.map((message, index) => {
             const attachments = messageAttachments[message.id] || [];
             const hasAudioTranscription = message.content.startsWith("[🎙 Transcripción de audio]");
+            const isSearchResult = searchModeMessages.has(message.id);
             
             return (
               <div
@@ -103,6 +106,28 @@ export function ChatMessages({ messages, streamingContent, isLoading, messageAtt
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                       <Mic className="h-3 w-3" />
                       <span>Transcrito desde audio</span>
+                    </div>
+                  )}
+                  
+                  {/* Search/Chat mode indicator for assistant messages */}
+                  {message.role === "assistant" && (
+                    <div className={cn(
+                      "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full w-fit",
+                      isSearchResult 
+                        ? "text-blue-600 dark:text-blue-400 bg-blue-500/10" 
+                        : "text-muted-foreground bg-muted/50"
+                    )}>
+                      {isSearchResult ? (
+                        <>
+                          <Globe className="h-2.5 w-2.5" />
+                          <span>Búsqueda</span>
+                        </>
+                      ) : (
+                        <>
+                          <MessageSquare className="h-2.5 w-2.5" />
+                          <span>Chat</span>
+                        </>
+                      )}
                     </div>
                   )}
                   
@@ -159,8 +184,28 @@ export function ChatMessages({ messages, streamingContent, isLoading, messageAtt
               <div className="shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <Bot className="h-4 w-4 text-primary" />
               </div>
-              <div className="rounded-lg px-4 py-2 max-w-[80%] bg-muted prose dark:prose-invert max-w-none chat-markdown">
-                <ReactMarkdown>{streamingContent}</ReactMarkdown>
+              <div className="flex flex-col gap-1 max-w-[80%]">
+                <div className={cn(
+                  "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full w-fit",
+                  isStreamingSearchMode 
+                    ? "text-blue-600 dark:text-blue-400 bg-blue-500/10" 
+                    : "text-muted-foreground bg-muted/50"
+                )}>
+                  {isStreamingSearchMode ? (
+                    <>
+                      <Globe className="h-2.5 w-2.5" />
+                      <span>Búsqueda</span>
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare className="h-2.5 w-2.5" />
+                      <span>Chat</span>
+                    </>
+                  )}
+                </div>
+                <div className="rounded-lg px-4 py-2 bg-muted prose dark:prose-invert max-w-none chat-markdown">
+                  <ReactMarkdown>{streamingContent}</ReactMarkdown>
+                </div>
               </div>
             </div>
           )}

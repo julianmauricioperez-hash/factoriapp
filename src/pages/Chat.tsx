@@ -62,6 +62,7 @@ const Chat = () => {
   const [selectedModel, setSelectedModel] = useState("google/gemini-3-flash-preview");
   const [searchMode, setSearchMode] = useState(false);
   const [messageAttachments, setMessageAttachments] = useState<Record<string, { type: string; url: string; name: string }[]>>({});
+  const [searchModeMessages, setSearchModeMessages] = useState<Set<string>>(new Set());
 
   // Get initial prompt from URL params
   const initialPrompt = searchParams.get("prompt") || "";
@@ -103,6 +104,7 @@ const Chat = () => {
       setSelectedConversationId(id);
       setMessages([]);
       setMessageAttachments({});
+      setSearchModeMessages(new Set());
       setSidebarOpen(false);
     }
   };
@@ -113,6 +115,7 @@ const Chat = () => {
       setSelectedConversationId(null);
       setMessages([]);
       setMessageAttachments({});
+      setSearchModeMessages(new Set());
     }
   };
 
@@ -368,6 +371,10 @@ const Chat = () => {
       const assistantMessage = await addMessage(conversationId, "assistant", assistantContent);
       if (assistantMessage) {
         setMessages(prev => [...prev, assistantMessage]);
+        // Track if this message was generated in search mode
+        if (searchMode) {
+          setSearchModeMessages(prev => new Set(prev).add(assistantMessage.id));
+        }
       }
 
       // Update title if first message
@@ -515,6 +522,8 @@ const Chat = () => {
             streamingContent={streamingContent}
             isLoading={isLoading}
             messageAttachments={messageAttachments}
+            searchModeMessages={searchModeMessages}
+            isStreamingSearchMode={searchMode}
           />
 
           <ChatInput
