@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import logoSrc from "@/assets/Logo.svg";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -39,17 +40,21 @@ export function AppHeader({ title, showBackButton }: AppHeaderProps) {
         {/* Mobile: Hamburger + Title */}
         <div className="flex items-center gap-2">
           <MobileNav />
-          <h1 className="text-lg font-semibold md:hidden">
-            {title || "Factoría"}
-          </h1>
+          <div className="flex items-center gap-2 md:hidden">
+            <img src={logoSrc} alt="Factoría logo" className="h-7 w-7" />
+            <h1 className="text-lg font-semibold">
+              {title || "Factoría"}
+            </h1>
+          </div>
         </div>
 
         {/* Desktop: Logo + Navigation */}
         <div className="hidden md:flex items-center gap-6">
           <button
             onClick={() => navigate("/")}
-            className="text-xl font-semibold text-foreground hover:text-primary transition-colors"
+            className="flex items-center gap-2 text-xl font-semibold text-foreground hover:text-primary transition-colors"
           >
+            <img src={logoSrc} alt="Factoría logo" className="h-8 w-8" />
             Factoría
           </button>
           <nav className="flex items-center gap-1">
