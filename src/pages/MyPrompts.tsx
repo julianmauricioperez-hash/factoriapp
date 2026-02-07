@@ -396,6 +396,15 @@ const MyPrompts = () => {
           )}
         </div>
 
+        {/* Prompt Counter */}
+        {prompts.length > 0 && (
+          <p className="mb-3 text-sm text-muted-foreground">
+            {filteredAndSortedPrompts.length === prompts.length
+              ? `${prompts.length} prompt${prompts.length !== 1 ? "s" : ""}`
+              : `${filteredAndSortedPrompts.length} de ${prompts.length} prompt${prompts.length !== 1 ? "s" : ""}`}
+          </p>
+        )}
+
         {/* Search and Filter Controls */}
         {prompts.length > 0 && (
           <div className="mb-4 space-y-3">
