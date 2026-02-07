@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,7 +23,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
-import { CheckCircle2, Plus, Sparkles, FileText } from "lucide-react";
+import { CheckCircle2, Plus, Sparkles, FileText, Download, X } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { ImprovePromptDialog } from "@/components/ImprovePromptDialog";
 import { PromptTemplates } from "@/components/PromptTemplates";
@@ -41,6 +41,15 @@ const Index = () => {
   const [addingCategory, setAddingCategory] = useState(false);
   const [showImproveDialog, setShowImproveDialog] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+    const dismissed = sessionStorage.getItem("install-banner-dismissed");
+    if (!isStandalone && !dismissed) {
+      setShowInstallBanner(true);
+    }
+  }, []);
 
   const handleSelectTemplate = (templateCategory: string, templatePrompt: string) => {
     // Check if the template category exists in user categories
@@ -130,6 +139,34 @@ const Index = () => {
   return (
     <AppLayout title="Nuevo Prompt">
       <div className="flex flex-col items-center justify-center py-4 md:py-8">
+        {showInstallBanner && (
+          <div className="w-full max-w-md mb-4 animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm">
+              <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+                <Download className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Instala Factoría</p>
+                <p className="text-xs text-muted-foreground truncate">Acceso rápido desde tu pantalla de inicio</p>
+              </div>
+              <Link to="/install">
+                <Button size="sm" variant="default" className="text-xs h-8 px-3">
+                  Instalar
+                </Button>
+              </Link>
+              <button
+                onClick={() => {
+                  setShowInstallBanner(false);
+                  sessionStorage.setItem("install-banner-dismissed", "true");
+                }}
+                className="text-muted-foreground hover:text-foreground p-1"
+                aria-label="Cerrar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
         <h1 className="text-lg md:text-xl text-foreground text-center mb-4 max-w-md">
           Con Factoría puedes transformar un prompt en una versión más clara, potente y orientada a resultados
         </h1>
