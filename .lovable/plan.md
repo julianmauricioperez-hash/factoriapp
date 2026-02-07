@@ -1,78 +1,76 @@
 
 
-## Pagina de Onboarding para Factoria
+## Mejoras a la Biblioteca Publica
 
-### Que es
-Una pantalla de bienvenida interactiva que se muestra a los usuarios nuevos despues de registrarse o iniciar sesion por primera vez. Guia al usuario por las funcionalidades principales de la app en 3-4 pasos visuales antes de llevarlo al contenido.
+Tres mejoras seleccionadas para enriquecer la experiencia en la Biblioteca Publica de Factoria.
 
-### Flujo del usuario
+---
 
-```text
-Registro/Login --> Onboarding (solo primera vez) --> Pagina principal
-```
+### 1. Guardar prompts en tu coleccion
 
-El onboarding se mostrara unicamente la primera vez que el usuario inicia sesion. Se usara una bandera `has_completed_onboarding` en una tabla `profiles` para recordar si ya lo vio.
+Permite que los usuarios autenticados guarden un prompt publico directamente como uno propio (copia privada).
 
-### Diseno de los pasos (4 pantallas)
+- Se agrega un boton "Guardar" (icono de bookmark/download) en cada tarjeta de prompt publico.
+- Al hacer clic, se crea una copia del prompt en la tabla `prompts` con el `user_id` del usuario actual, `is_public = false` y `is_favorite = false`.
+- Si el usuario no esta autenticado, se muestra un aviso y se redirige a `/auth`.
+- Se muestra un toast confirmando "Prompt guardado en tus prompts".
 
-1. **Bienvenida** - "Bienvenido a Factoria" con el nombre del usuario y un mensaje motivador sobre gestionar y potenciar sus prompts.
+---
 
-2. **Crea y organiza** - Explica que puede crear prompts, organizarlos en colecciones y categorias, y etiquetarlos.
+### 2. Vista previa expandible
 
-3. **Chat con IA** - Muestra que puede chatear con IA directamente desde la app para probar y refinar prompts.
+Actualmente los prompts se muestran truncados a 4 lineas (`line-clamp-4`). Con esta mejora:
 
-4. **Biblioteca publica** - Explica que puede compartir prompts con la comunidad y descubrir los de otros usuarios.
+- Al hacer clic en una tarjeta, se abre un **Dialog (modal)** con el texto completo del prompt.
+- El modal muestra:
+  - Categoria como badge
+  - Texto completo del prompt (scroll si es largo)
+  - Fecha de creacion
+  - Etiquetas del prompt (si las tiene)
+  - Botones de accion: Copiar, Guardar, Like, Compartir enlace
+- Se puede cerrar con X o haciendo clic fuera.
 
-Cada paso tendra:
-- Un icono grande representativo
-- Un titulo corto
-- Una descripcion de 1-2 lineas
-- Indicadores de progreso (dots)
-- Botones "Siguiente" / "Anterior" / "Empezar" (ultimo paso)
-- Opcion de "Saltar" para omitir el onboarding
+---
+
+### 3. Etiquetas visibles y filtrables
+
+Mostrar las etiquetas de los prompts publicos y permitir filtrar por ellas.
+
+**Cambio en base de datos:**
+- Se necesita una nueva politica RLS en `prompt_tags` que permita a cualquiera leer las etiquetas de prompts publicos:
+  ```
+  SELECT en prompt_tags WHERE el prompt asociado es publico (is_public = true)
+  ```
+- Tambien se necesita una politica RLS en `tags` para que cualquiera pueda ver etiquetas que estan asociadas a prompts publicos.
+
+**En la interfaz:**
+- Cada tarjeta de prompt muestra sus etiquetas como badges debajo del texto.
+- Se agrega una barra de filtro por etiquetas en la parte superior (similar al `TagsFilter` existente en Mis Prompts).
+- Las etiquetas disponibles en el filtro se extraen de los prompts publicos cargados.
+
+---
 
 ### Detalles tecnicos
 
-**Nueva tabla `profiles`:**
-- `id` (UUID, PK, referencia a `auth.users.id`)
-- `has_completed_onboarding` (BOOLEAN, default false)
-- `created_at` (TIMESTAMPTZ)
-- Politicas RLS: cada usuario solo puede leer/actualizar su propio perfil
-- Trigger para crear automaticamente el perfil cuando se registra un nuevo usuario
+**Migracion SQL (nueva):**
+- Agregar politica RLS SELECT en `prompt_tags` para permitir lectura publica cuando el prompt es publico.
+- Agregar politica RLS SELECT en `tags` para permitir lectura de etiquetas asociadas a prompts publicos.
 
-**Nuevo archivo `src/pages/Onboarding.tsx`:**
-- Componente con estado para el paso actual (0-3)
-- Animaciones suaves de transicion entre pasos usando CSS transitions
-- Diseno responsive (centrado, max-width, adaptado a movil)
-- Al completar: actualiza `has_completed_onboarding = true` y redirige a `/`
+**Hook `usePublicPrompts.ts` - Modificar:**
+- Extender la consulta para incluir las etiquetas de cada prompt via la relacion `prompt_tags -> tags`.
+- Actualizar la interfaz `PublicPrompt` para incluir un array de tags (`{ id, name, color }`).
 
-**Nueva ruta en `src/App.tsx`:**
-- Agregar `/onboarding` como ruta protegida
+**Pagina `PublicLibrary.tsx` - Modificar:**
+- Agregar boton "Guardar" en cada tarjeta (con logica de insercion en `prompts`).
+- Agregar componente de modal/dialog para vista expandida del prompt.
+- Agregar seccion de etiquetas en cada tarjeta y barra de filtro de etiquetas.
+- Agregar estado para etiquetas seleccionadas y logica de filtrado.
 
-**Modificar `src/pages/Auth.tsx`:**
-- Despues de login/registro exitoso, verificar si el perfil tiene `has_completed_onboarding = false`
-- Si no ha completado onboarding, redirigir a `/onboarding` en lugar de `/`
+**Archivos a crear:**
+- Ninguno nuevo (se reutilizan componentes existentes como `Dialog`, `Badge`, `TagsFilter`).
 
-**Nuevo hook `src/hooks/useProfile.ts`:**
-- Hook para obtener y actualizar el perfil del usuario
-- Funcion `completeOnboarding()` que marca el onboarding como completado
-
-### Archivos a crear
-- `src/pages/Onboarding.tsx` - Pagina principal del onboarding
-- `src/hooks/useProfile.ts` - Hook para gestionar el perfil
-- Migracion SQL para la tabla `profiles` con trigger y politicas RLS
-
-### Archivos a modificar
-- `src/App.tsx` - Agregar ruta `/onboarding`
-- `src/pages/Auth.tsx` - Redirigir a onboarding si es primera vez
-- `src/hooks/useAuth.tsx` - Incluir verificacion de perfil en el flujo de auth
-
-### Estilo visual
-Siguiendo el diseno minimalista actual de la app:
-- Fondo blanco/oscuro segun tema
-- Iconos de Lucide grandes y coloridos
-- Tipografia limpia
-- Card centrada con max-width ~500px (consistente con el resto de la app)
-- Dots de progreso en la parte inferior
-- Transiciones suaves entre pasos
+**Archivos a modificar:**
+- `src/hooks/usePublicPrompts.ts` - Incluir tags en la consulta.
+- `src/pages/PublicLibrary.tsx` - Boton guardar, modal de vista previa, filtro de etiquetas.
+- Migracion SQL para las nuevas politicas RLS.
 
