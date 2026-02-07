@@ -86,7 +86,7 @@ export function ChatMessages({ messages, streamingContent, isLoading }: ChatMess
                     "rounded-lg px-4 py-2",
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted prose prose-sm dark:prose-invert max-w-none"
+                      : "bg-muted prose dark:prose-invert max-w-none chat-markdown"
                   )}
                 >
                   {message.role === "user" ? (
@@ -138,7 +138,7 @@ export function ChatMessages({ messages, streamingContent, isLoading }: ChatMess
               <div className="shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <Bot className="h-4 w-4 text-primary" />
               </div>
-              <div className="rounded-lg px-4 py-2 max-w-[80%] bg-muted prose prose-sm dark:prose-invert">
+              <div className="rounded-lg px-4 py-2 max-w-[80%] bg-muted prose dark:prose-invert max-w-none chat-markdown">
                 <ReactMarkdown>{streamingContent}</ReactMarkdown>
               </div>
             </div>
