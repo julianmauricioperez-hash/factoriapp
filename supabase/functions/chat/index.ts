@@ -8,10 +8,12 @@ const corsHeaders = {
 // Available models
 const AVAILABLE_MODELS = [
   "google/gemini-3-flash-preview",
+  "google/gemini-3-pro-preview",
   "google/gemini-2.5-pro",
   "google/gemini-2.5-flash",
   "openai/gpt-5",
   "openai/gpt-5-mini",
+  "openai/gpt-5.2",
 ];
 
 serve(async (req) => {

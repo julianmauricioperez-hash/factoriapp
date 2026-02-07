@@ -16,9 +16,15 @@ export const AI_MODELS: AIModel[] = [
     provider: "google",
   },
   {
+    id: "google/gemini-3-pro-preview",
+    name: "Gemini 3 Pro",
+    description: "Última generación, máxima potencia",
+    provider: "google",
+  },
+  {
     id: "google/gemini-2.5-pro",
     name: "Gemini 2.5 Pro",
-    description: "Máxima calidad",
+    description: "Excelente razonamiento + visión",
     provider: "google",
   },
   {
@@ -37,6 +43,12 @@ export const AI_MODELS: AIModel[] = [
     id: "openai/gpt-5-mini",
     name: "GPT-5 Mini",
     description: "Rápido y económico",
+    provider: "openai",
+  },
+  {
+    id: "openai/gpt-5.2",
+    name: "GPT-5.2",
+    description: "Razonamiento avanzado",
     provider: "openai",
   },
 ];
