@@ -11,12 +11,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { usePublicPrompts } from "@/hooks/usePublicPrompts";
+import { usePublicPrompts, type PublicPrompt } from "@/hooks/usePublicPrompts";
 import { usePromptLikes } from "@/hooks/usePromptLikes";
 import { useAuth } from "@/hooks/useAuth";
-import { Search, Copy, X, BookOpen, ExternalLink, ArrowUpDown, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Search, Copy, X, BookOpen, ExternalLink, ArrowUpDown, ChevronLeft, ChevronRight, Heart, Bookmark } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
+import { TagsFilter } from "@/components/TagsFilter";
+import { PublicPromptPreviewDialog } from "@/components/PublicPromptPreviewDialog";
 
 type SortOption = "date-desc" | "date-asc" | "category-asc" | "category-desc" | "likes-desc";
 
@@ -28,14 +31,35 @@ const PublicLibrary = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [savingPromptId, setSavingPromptId] = useState<string | null>(null);
+  const [previewPrompt, setPreviewPrompt] = useState<PublicPrompt | null>(null);
 
   // Get all prompt IDs for likes hook
   const promptIds = useMemo(() => prompts.map((p) => p.id), [prompts]);
   const { likeCounts, userLikes, toggleLike } = usePromptLikes(promptIds);
 
   const categories = [...new Set(prompts.map((p) => p.category))].sort();
+
+  // Extract unique tags from all public prompts
+  const availableTags = useMemo(() => {
+    const tagMap = new Map<string, { id: string; name: string }>();
+    prompts.forEach((p) => {
+      p.tags.forEach((t) => {
+        if (!tagMap.has(t.id)) tagMap.set(t.id, { id: t.id, name: t.name });
+      });
+    });
+    return Array.from(tagMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [prompts]);
+
+  const handleToggleTag = (tagId: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
+    setCurrentPage(1);
+  };
 
   const filteredPrompts = prompts
     .filter((prompt) => {
@@ -44,7 +68,10 @@ const PublicLibrary = () => {
         .includes(searchQuery.toLowerCase());
       const matchesCategory =
         filterCategory === "all" || prompt.category === filterCategory;
-      return matchesSearch && matchesCategory;
+      const matchesTags =
+        selectedTags.length === 0 ||
+        selectedTags.every((tagId) => prompt.tags.some((t) => t.id === tagId));
+      return matchesSearch && matchesCategory && matchesTags;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -63,7 +90,7 @@ const PublicLibrary = () => {
       }
     });
 
-  const hasActiveFilters = searchQuery !== "" || filterCategory !== "all";
+  const hasActiveFilters = searchQuery !== "" || filterCategory !== "all" || selectedTags.length > 0;
   const isFiltered = filteredPrompts.length !== prompts.length;
 
   // Pagination
@@ -71,7 +98,6 @@ const PublicLibrary = () => {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedPrompts = filteredPrompts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  // Reset to page 1 when filters change
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
@@ -90,6 +116,7 @@ const PublicLibrary = () => {
   const clearFilters = () => {
     setSearchQuery("");
     setFilterCategory("all");
+    setSelectedTags([]);
     setCurrentPage(1);
   };
 
@@ -104,6 +131,44 @@ const PublicLibrary = () => {
       return;
     }
     await toggleLike(promptId);
+  };
+
+  const handleSavePrompt = async (prompt: PublicPrompt) => {
+    if (!user) {
+      toast({
+        title: "Inicia sesión",
+        description: "Necesitas iniciar sesión para guardar prompts.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    setSavingPromptId(prompt.id);
+    try {
+      const { error } = await supabase.from("prompts").insert({
+        category: prompt.category,
+        prompt_text: prompt.prompt_text,
+        is_favorite: false,
+        is_public: false,
+        user_id: user.id,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "¡Guardado!",
+        description: "El prompt se guardó en tus prompts.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el prompt.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingPromptId(null);
+    }
   };
 
   const copyToClipboard = async (text: string) => {
@@ -139,7 +204,7 @@ const PublicLibrary = () => {
         </p>
 
         {/* Search and Filter Controls */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -185,6 +250,17 @@ const PublicLibrary = () => {
           </Select>
         </div>
 
+        {/* Tags filter */}
+        {availableTags.length > 0 && (
+          <div className="mb-4">
+            <TagsFilter
+              tags={availableTags}
+              selectedTags={selectedTags}
+              onToggleTag={handleToggleTag}
+            />
+          </div>
+        )}
+
         {/* Results counter and active filters indicator */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -229,11 +305,27 @@ const PublicLibrary = () => {
           <>
             <div className="space-y-3">
               {paginatedPrompts.map((prompt) => (
-                <Card key={prompt.id} className="border shadow-sm">
+                <Card
+                  key={prompt.id}
+                  className="border shadow-sm cursor-pointer transition-colors hover:bg-muted/30"
+                  onClick={() => setPreviewPrompt(prompt)}
+                >
                   <CardContent className="p-4">
                     <div className="mb-2 flex items-start justify-between gap-2">
-                      <Badge variant="secondary">{prompt.category}</Badge>
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant="secondary">{prompt.category}</Badge>
+                        {prompt.tags.slice(0, 3).map((tag) => (
+                          <Badge key={tag.id} variant="outline" className="text-xs">
+                            {tag.name}
+                          </Badge>
+                        ))}
+                        {prompt.tags.length > 3 && (
+                          <span className="text-xs text-muted-foreground">
+                            +{prompt.tags.length - 3}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -248,6 +340,16 @@ const PublicLibrary = () => {
                             className={`h-4 w-4 ${userLikes[prompt.id] ? "fill-current" : ""}`}
                           />
                           <span className="text-xs">{likeCounts[prompt.id] || 0}</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleSavePrompt(prompt)}
+                          disabled={savingPromptId === prompt.id}
+                          title="Guardar en mis prompts"
+                        >
+                          <Bookmark className="h-4 w-4" />
                         </Button>
                         <Link to={`/p/${prompt.public_slug}`}>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -289,7 +391,6 @@ const PublicLibrary = () => {
                 <div className="flex items-center gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
                     .filter((page) => {
-                      // Show first, last, current, and adjacent pages
                       if (page === 1 || page === totalPages) return true;
                       if (Math.abs(page - currentPage) <= 1) return true;
                       return false;
@@ -323,6 +424,17 @@ const PublicLibrary = () => {
           </>
         )}
       </div>
+
+      <PublicPromptPreviewDialog
+        open={!!previewPrompt}
+        onOpenChange={(open) => !open && setPreviewPrompt(null)}
+        prompt={previewPrompt}
+        likeCounts={likeCounts}
+        userLikes={userLikes}
+        onLike={handleLike}
+        onSave={handleSavePrompt}
+        saving={savingPromptId !== null}
+      />
     </AppLayout>
   );
 };

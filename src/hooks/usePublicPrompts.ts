@@ -2,12 +2,19 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-interface PublicPrompt {
+export interface PublicPromptTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface PublicPrompt {
   id: string;
   category: string;
   prompt_text: string;
   created_at: string;
   public_slug: string;
+  tags: PublicPromptTag[];
 }
 
 export function usePublicPrompts() {
@@ -22,12 +29,25 @@ export function usePublicPrompts() {
     try {
       const { data, error } = await supabase
         .from("prompts")
-        .select("id, category, prompt_text, created_at, public_slug")
+        .select("id, category, prompt_text, created_at, public_slug, prompt_tags(tag_id, tags(id, name, color))")
         .eq("is_public", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPrompts((data as PublicPrompt[]) || []);
+
+      const mapped: PublicPrompt[] = (data || []).map((p: any) => ({
+        id: p.id,
+        category: p.category,
+        prompt_text: p.prompt_text,
+        created_at: p.created_at,
+        public_slug: p.public_slug,
+        tags: (p.prompt_tags || [])
+          .map((pt: any) => pt.tags)
+          .filter(Boolean)
+          .map((t: any) => ({ id: t.id, name: t.name, color: t.color || "slate" })),
+      }));
+
+      setPrompts(mapped);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -58,7 +78,7 @@ export function usePublicPromptBySlug(slug: string | undefined) {
       try {
         const { data, error } = await supabase
           .from("prompts")
-          .select("id, category, prompt_text, created_at, public_slug")
+          .select("id, category, prompt_text, created_at, public_slug, prompt_tags(tag_id, tags(id, name, color))")
           .eq("public_slug", slug)
           .eq("is_public", true)
           .single();
@@ -66,7 +86,18 @@ export function usePublicPromptBySlug(slug: string | undefined) {
         if (error || !data) {
           setNotFound(true);
         } else {
-          setPrompt(data as PublicPrompt);
+          const p = data as any;
+          setPrompt({
+            id: p.id,
+            category: p.category,
+            prompt_text: p.prompt_text,
+            created_at: p.created_at,
+            public_slug: p.public_slug,
+            tags: (p.prompt_tags || [])
+              .map((pt: any) => pt.tags)
+              .filter(Boolean)
+              .map((t: any) => ({ id: t.id, name: t.name, color: t.color || "slate" })),
+          });
         }
       } catch {
         setNotFound(true);
