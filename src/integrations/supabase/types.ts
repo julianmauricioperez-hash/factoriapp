@@ -167,6 +167,24 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          has_completed_onboarding: boolean
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          has_completed_onboarding?: boolean
+          id: string
+        }
+        Update: {
+          created_at?: string
+          has_completed_onboarding?: boolean
+          id?: string
+        }
+        Relationships: []
+      }
       prompt_likes: {
         Row: {
           created_at: string
