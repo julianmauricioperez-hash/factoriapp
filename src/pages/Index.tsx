@@ -129,11 +129,14 @@ const Index = () => {
 
   return (
     <AppLayout title="Nuevo Prompt">
-      <div className="flex items-center justify-center py-4 md:py-8">
+      <div className="flex flex-col items-center justify-center py-4 md:py-8">
+        <h1 className="text-lg md:text-xl text-foreground text-center mb-4 max-w-md">
+          Con Factoría puedes transformar un prompt en una versión más clara, potente y orientada a resultados
+        </h1>
         <Card className="w-full max-w-md shadow-sm border">
           <CardHeader className="pb-4">
             <CardTitle className="text-xl font-medium text-foreground flex items-center justify-between">
-              Registrar Prompt
+              Optimiza tu prompt
               <Button
                 variant="outline"
                 size="sm"
