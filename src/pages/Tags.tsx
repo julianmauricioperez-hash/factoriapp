@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -29,8 +36,11 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTags, TagWithUsage } from "@/hooks/useTags";
+import { useCollections } from "@/hooks/useCollections";
+import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { COLLECTION_COLORS, getColorClasses } from "@/lib/collectionColors";
+import { PromptCard } from "@/components/PromptCard";
 import {
   Tag,
   Plus,
@@ -44,13 +54,26 @@ import {
   ArrowUpDown,
   FileText,
   MessageSquare,
+  ChevronRight,
 } from "lucide-react";
+
+interface Prompt {
+  id: string;
+  category: string;
+  prompt_text: string;
+  created_at: string;
+  is_favorite: boolean;
+  is_public?: boolean;
+  public_slug?: string | null;
+  collection_id?: string | null;
+}
 
 type SortOption = "name-asc" | "name-desc" | "date" | "usage";
 
 const Tags = () => {
   const { user, loading: authLoading } = useAuth();
   const { tagsWithUsage, loading, createTag, updateTag, deleteTag, refetch } = useTags();
+  const { collections } = useCollections();
   const navigate = useNavigate();
 
   const [newTagName, setNewTagName] = useState("");
@@ -62,6 +85,11 @@ const Tags = () => {
   const [editingTag, setEditingTag] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
+
+  // States for viewing tag prompts
+  const [viewingTag, setViewingTag] = useState<TagWithUsage | null>(null);
+  const [tagPrompts, setTagPrompts] = useState<Prompt[]>([]);
+  const [loadingPrompts, setLoadingPrompts] = useState(false);
 
   if (!authLoading && !user) {
     navigate("/auth");
@@ -77,13 +105,110 @@ const Tags = () => {
         case "name-desc":
           return b.name.localeCompare(a.name);
         case "date":
-          return 0; // already ordered by creation
+          return 0;
         case "usage":
           return (b.promptCount + b.chatCount) - (a.promptCount + a.chatCount);
         default:
           return 0;
       }
     });
+
+  const fetchTagPrompts = async (tagId: string) => {
+    setLoadingPrompts(true);
+    try {
+      const { data, error } = await supabase
+        .from("prompt_tags")
+        .select("prompt_id, prompts(id, category, prompt_text, created_at, is_favorite, is_public, public_slug, collection_id)")
+        .eq("tag_id", tagId);
+
+      if (error) throw error;
+
+      const prompts: Prompt[] = (data || [])
+        .map((pt: any) => pt.prompts)
+        .filter(Boolean)
+        .sort((a: Prompt, b: Prompt) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setTagPrompts(prompts);
+    } catch (error) {
+      console.error("Error fetching tag prompts:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los prompts.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPrompts(false);
+    }
+  };
+
+  const handleViewTag = (tag: TagWithUsage) => {
+    setViewingTag(tag);
+    fetchTagPrompts(tag.id);
+  };
+
+  const handlePromptUpdate = async (promptId: string, newText: string) => {
+    try {
+      const { error } = await supabase
+        .from("prompts")
+        .update({ prompt_text: newText })
+        .eq("id", promptId);
+
+      if (error) throw error;
+
+      setTagPrompts((prev) =>
+        prev.map((p) => (p.id === promptId ? { ...p, prompt_text: newText } : p))
+      );
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el prompt.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleFavorite = async (prompt: Prompt) => {
+    const newValue = !prompt.is_favorite;
+    try {
+      const { error } = await supabase
+        .from("prompts")
+        .update({ is_favorite: newValue })
+        .eq("id", prompt.id);
+
+      if (error) throw error;
+
+      setTagPrompts((prev) =>
+        prev.map((p) => (p.id === prompt.id ? { ...p, is_favorite: newValue } : p))
+      );
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el favorito.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCollectionUpdateForPrompt = async (promptId: string, collectionId: string | null) => {
+    try {
+      const { error } = await supabase
+        .from("prompts")
+        .update({ collection_id: collectionId })
+        .eq("id", promptId);
+
+      if (error) throw error;
+
+      setTagPrompts((prev) =>
+        prev.map((p) => (p.id === promptId ? { ...p, collection_id: collectionId } : p))
+      );
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo mover el prompt.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleCreateTag = async () => {
     if (!newTagName.trim()) return;
@@ -310,14 +435,18 @@ const Tags = () => {
                 {filteredTags.map((tag, index) => (
                   <div
                     key={tag.id}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in group"
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in group cursor-pointer"
                     style={{ animationDelay: `${index * 30}ms`, animationFillMode: "backwards" }}
+                    onClick={() => handleViewTag(tag)}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {/* Color dot with picker */}
                       <Popover>
                         <PopoverTrigger asChild>
-                          <button className={`w-3.5 h-3.5 rounded-full shrink-0 ${getColorClasses(tag.color).bg} transition-transform hover:scale-125`} />
+                          <button
+                            className={`w-3.5 h-3.5 rounded-full shrink-0 ${getColorClasses(tag.color).bg} transition-transform hover:scale-125`}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-3" align="start">
                           <div className="grid grid-cols-6 gap-2">
@@ -327,7 +456,7 @@ const Tags = () => {
                                 className={`w-7 h-7 rounded-full ${color.bg} transition-transform hover:scale-110 ${
                                   tag.color === color.name ? "ring-2 ring-offset-2 ring-primary" : ""
                                 }`}
-                                onClick={() => handleColorChange(tag.id, color.name)}
+                                onClick={(e) => { e.stopPropagation(); handleColorChange(tag.id, color.name); }}
                               />
                             ))}
                           </div>
@@ -336,7 +465,7 @@ const Tags = () => {
 
                       {/* Name (editable) */}
                       {editingTag === tag.id ? (
-                        <div className="flex items-center gap-2 flex-1">
+                        <div className="flex items-center gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
                           <Input
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
@@ -348,7 +477,7 @@ const Tags = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-primary"
-                            onClick={() => handleSaveEdit(tag.id)}
+                            onClick={(e) => { e.stopPropagation(); handleSaveEdit(tag.id); }}
                           >
                             <Check className="h-4 w-4" />
                           </Button>
@@ -356,7 +485,7 @@ const Tags = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => setEditingTag(null)}
+                            onClick={(e) => { e.stopPropagation(); setEditingTag(null); }}
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -391,7 +520,7 @@ const Tags = () => {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => handleStartEdit(tag)}
+                          onClick={(e) => { e.stopPropagation(); handleStartEdit(tag); }}
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
@@ -399,10 +528,11 @@ const Tags = () => {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => setDeletingTag(tag)}
+                          onClick={(e) => { e.stopPropagation(); setDeletingTag(tag); }}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
                   </div>
@@ -417,6 +547,60 @@ const Tags = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* View Tag Prompts Dialog */}
+        <Dialog open={!!viewingTag} onOpenChange={() => setViewingTag(null)}>
+          <DialogContent className="bg-background max-w-2xl max-h-[85vh] overflow-y-auto mx-4">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {viewingTag && (
+                  <>
+                    <div className={`w-3 h-3 rounded-full ${getColorClasses(viewingTag.color).bg}`} />
+                    {viewingTag.name}
+                    <Badge variant="secondary" className="text-xs ml-1">
+                      {viewingTag.promptCount} {viewingTag.promptCount === 1 ? "prompt" : "prompts"}
+                    </Badge>
+                  </>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              {loadingPrompts ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : tagPrompts.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground">Esta etiqueta no tiene prompts asignados.</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Asigna esta etiqueta a tus prompts desde "Mis Prompts".
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {tagPrompts.map((prompt) => (
+                    <PromptCard
+                      key={prompt.id}
+                      prompt={prompt}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                      onToggleFavorite={toggleFavorite}
+                      onPromptUpdate={handlePromptUpdate}
+                      onCollectionUpdate={handleCollectionUpdateForPrompt}
+                      collections={collections}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setViewingTag(null)}>
+                Cerrar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Delete confirmation dialog */}
         <AlertDialog open={!!deletingTag} onOpenChange={() => setDeletingTag(null)}>
