@@ -1,36 +1,34 @@
 
 
-## Contador de prompts en "Mis Prompts"
+## Cambios en la pagina de inicio
 
-Se agregara un contador visible que muestre el total de prompts y se actualice dinamicamente al aplicar filtros.
+Dos ajustes visuales en la pagina principal (`src/pages/Index.tsx`):
 
 ---
 
-### Comportamiento
+### 1. Titulo principal antes de la tarjeta
 
-- Debajo del encabezado "Mis Prompts" y antes de los controles de busqueda/filtro, se mostrara un texto con el conteo.
-- **Sin filtros activos**: Muestra el total, por ejemplo: "12 prompts".
-- **Con filtros activos**: Muestra cuantos coinciden del total, por ejemplo: "3 de 12 prompts".
-- El conteo se actualiza en tiempo real al cambiar cualquier filtro (busqueda, categoria, coleccion, favoritos, etiquetas).
-- El texto se presenta de forma compacta y discreta usando el estilo `text-muted-foreground`.
+Se agregara un encabezado centrado encima de la tarjeta del formulario con el texto:
+
+**"Con Factoria puedes transformar un prompt en una version mas clara, potente y orientada a resultados"**
+
+- Se coloca dentro del contenedor existente (`div` con `flex items-center justify-center`), justo antes de la `Card`.
+- Se convierte el contenedor en `flex-col` para apilar el titulo y la tarjeta verticalmente.
+- Estilo: texto centrado, tamano moderado (`text-lg md:text-xl`), color `text-foreground`, con un margen inferior (`mb-4`) para separarlo de la tarjeta.
+
+---
+
+### 2. Cambiar "Registrar Prompt" por "Optimiza tu prompt"
+
+En el `CardTitle` (linea 136), se reemplaza el texto "Registrar Prompt" por "Optimiza tu prompt".
 
 ---
 
 ### Detalles tecnicos
 
-**Archivo a modificar: `src/pages/MyPrompts.tsx`**
+**Archivo a modificar:** `src/pages/Index.tsx`
 
-1. Agregar una linea de texto entre el encabezado ("Mis Prompts" + boton Exportar) y los controles de busqueda/filtro (linea ~398).
+- **Linea 132**: Cambiar el `div` contenedor para usar `flex-col` y agregar el titulo antes de la `Card`.
+- **Linea 136**: Reemplazar el texto "Registrar Prompt" por "Optimiza tu prompt".
 
-2. La logica es sencilla, usando los valores que ya existen:
-   - `prompts.length` = total de prompts del usuario.
-   - `filteredAndSortedPrompts.length` = prompts que coinciden con los filtros activos.
-   - Si ambos valores son iguales, mostrar solo el total (ej: "12 prompts").
-   - Si son diferentes, mostrar ambos (ej: "3 de 12 prompts").
-
-3. Detectar si hay filtros activos comparando: `searchQuery`, `filterCategory !== "all"`, `filterCollection !== "all"`, `showFavoritesOnly`, o `selectedTagIds.length > 0`.
-
-4. No se requieren estados nuevos ni consultas adicionales a la base de datos; todo se calcula con los datos ya disponibles en memoria.
-
-**No se requieren cambios en la base de datos.**
-
+No se requieren cambios en la base de datos ni en otros archivos.
