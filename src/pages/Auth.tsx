@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { Separator } from "@/components/ui/separator";
 import { AppLayout } from "@/components/AppLayout";
 
@@ -19,12 +20,17 @@ const Auth = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
 
   useEffect(() => {
-    if (user) {
-      navigate("/");
+    if (user && !profileLoading) {
+      if (profile && !profile.has_completed_onboarding) {
+        navigate("/onboarding");
+      } else if (profile) {
+        navigate("/");
+      }
     }
-  }, [user, navigate]);
+  }, [user, profile, profileLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +47,6 @@ const Auth = () => {
           title: "¡Bienvenido!",
           description: "Has iniciado sesión correctamente.",
         });
-        navigate("/");
       } else {
         const { error } = await supabase.auth.signUp({
           email,
