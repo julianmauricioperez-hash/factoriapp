@@ -15,6 +15,7 @@ import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatMessages } from "@/components/chat/ChatMessages";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ModelSelector } from "@/components/chat/ModelSelector";
+import { SearchModeToggle } from "@/components/chat/SearchModeToggle";
 import { ChatAttachment } from "@/components/chat/AttachmentPreview";
 import { useChatConversations, ChatMessage } from "@/hooks/useChatConversations";
 import { useChatTags } from "@/hooks/useChatTags";
@@ -59,6 +60,7 @@ const Chat = () => {
   const [streamingContent, setStreamingContent] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState("google/gemini-3-flash-preview");
+  const [searchMode, setSearchMode] = useState(false);
   const [messageAttachments, setMessageAttachments] = useState<Record<string, { type: string; url: string; name: string }[]>>({});
 
   // Get initial prompt from URL params
@@ -200,14 +202,14 @@ const Chat = () => {
     });
   };
 
-  const streamChat = async (allMessages: any[], model: string) => {
+  const streamChat = async (allMessages: any[], model: string, isSearchMode: boolean) => {
     const response = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages: allMessages, model }),
+      body: JSON.stringify({ messages: allMessages, model, searchMode: isSearchMode }),
     });
 
     if (!response.ok) {
@@ -360,7 +362,7 @@ const Chat = () => {
         };
       }
 
-      const assistantContent = await streamChat(historyMessages, selectedModel);
+      const assistantContent = await streamChat(historyMessages, selectedModel, searchMode);
 
       // Save assistant message
       const assistantMessage = await addMessage(conversationId, "assistant", assistantContent);
@@ -477,6 +479,11 @@ const Chat = () => {
             )}
             {!isMobile && !selectedConversationId && <div className="flex-1" />}
             <div className="flex items-center gap-2">
+              <SearchModeToggle
+                searchMode={searchMode}
+                onToggle={setSearchMode}
+                disabled={isLoading}
+              />
               {messages.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -514,6 +521,7 @@ const Chat = () => {
             onSend={handleSendMessage}
             disabled={isLoading}
             initialValue={initialPrompt}
+            placeholder={searchMode ? "¿Qué quieres buscar?" : "Escribe tu mensaje o pega un prompt..."}
           />
         </div>
       </div>

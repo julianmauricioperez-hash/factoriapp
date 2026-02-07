@@ -22,7 +22,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, model } = await req.json();
+    const { messages, model, searchMode } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(
@@ -43,13 +43,34 @@ serve(async (req) => {
 
     // Process messages to handle multimodal content
     const processedMessages = messages.map((msg: any) => {
-      // If content is already an array (multimodal), pass through
       if (Array.isArray(msg.content)) {
         return msg;
       }
-      // If content is a string, pass through as-is
       return msg;
     });
+
+    // Choose system prompt based on search mode
+    const systemPrompt = searchMode
+      ? `Eres un motor de búsqueda inteligente con IA. Tu objetivo es proporcionar respuestas informativas, actualizadas y bien estructuradas a las consultas del usuario.
+
+INSTRUCCIONES DE BÚSQUEDA:
+1. Responde SIEMPRE en español de forma clara y detallada.
+2. Estructura tus respuestas con encabezados, listas y secciones claras usando Markdown.
+3. Incluye datos específicos, fechas, cifras y hechos relevantes cuando sea posible.
+4. Si la pregunta es sobre un tema actual, proporciona la información más reciente que conozcas e indica claramente hasta cuándo llega tu conocimiento.
+5. Cita fuentes o referencias cuando sea apropiado (nombres de sitios, organizaciones, estudios).
+6. Si no estás seguro de algo, indícalo claramente en lugar de inventar información.
+7. Ofrece múltiples perspectivas cuando el tema sea debatible o complejo.
+8. Al final de tu respuesta, sugiere búsquedas relacionadas que podrían interesar al usuario.
+9. Usa emojis relevantes para hacer la respuesta más visual y organizada.
+10. Para temas técnicos, incluye ejemplos de código si es pertinente.
+
+FORMATO DE RESPUESTA:
+- Usa "## " para títulos principales
+- Usa "### " para subtítulos
+- Usa listas con viñetas o numeradas
+- Incluye una sección "🔍 Búsquedas relacionadas" al final con 3-5 sugerencias`
+      : "Eres un asistente de IA amigable y útil. Respondes siempre en español de forma clara y concisa. Ayudas a los usuarios a probar y mejorar sus prompts. Puedes analizar imágenes cuando se te envían.";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -60,10 +81,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: selectedModel,
         messages: [
-          { 
-            role: "system", 
-            content: "Eres un asistente de IA amigable y útil. Respondes siempre en español de forma clara y concisa. Ayudas a los usuarios a probar y mejorar sus prompts. Puedes analizar imágenes cuando se te envían." 
-          },
+          { role: "system", content: systemPrompt },
           ...processedMessages,
         ],
         stream: true,
