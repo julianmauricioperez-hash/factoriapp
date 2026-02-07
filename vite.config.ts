@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "pwa-192x192.png", "pwa-512x512.png"],
+      includeAssets: ["favicon.ico", "pwa-icon.svg", "pwa-icon-maskable.svg", "pwa-192x192.png", "pwa-512x512.png"],
       manifest: {
         name: "Factoría - El Sistema Simple",
         short_name: "Factoría",
@@ -31,6 +31,18 @@ export default defineConfig(({ mode }) => ({
         start_url: "/",
         icons: [
           {
+            src: "pwa-icon.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any",
+          },
+          {
+            src: "pwa-icon-maskable.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "maskable",
+          },
+          {
             src: "pwa-192x192.png",
             sizes: "192x192",
             type: "image/png",
@@ -39,12 +51,6 @@ export default defineConfig(({ mode }) => ({
             src: "pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
-          },
-          {
-            src: "pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
           },
         ],
       },
