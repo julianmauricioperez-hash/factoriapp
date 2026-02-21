@@ -25,21 +25,19 @@ export function usePromptLikes(promptIds: string[]) {
     }
 
     try {
-      // Fetch like counts for all prompts
+      // Fetch like counts using RPC (no user_id exposed)
       const { data: counts, error: countError } = await supabase
-        .from("prompt_likes")
-        .select("prompt_id")
-        .in("prompt_id", promptIds);
+        .rpc("get_prompt_like_counts", { prompt_ids: promptIds });
 
       if (countError) throw countError;
 
-      // Count likes per prompt
+      // Build count map
       const countMap: LikeCount = {};
       promptIds.forEach((id) => {
         countMap[id] = 0;
       });
-      counts?.forEach((like) => {
-        countMap[like.prompt_id] = (countMap[like.prompt_id] || 0) + 1;
+      (counts as any[])?.forEach((row: { prompt_id: string; like_count: number }) => {
+        countMap[row.prompt_id] = row.like_count;
       });
       setLikeCounts(countMap);
 

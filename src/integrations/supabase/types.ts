@@ -372,6 +372,13 @@ export type Database = {
     Functions: {
       generate_collection_slug: { Args: never; Returns: string }
       generate_prompt_slug: { Args: never; Returns: string }
+      get_prompt_like_counts: {
+        Args: { prompt_ids: string[] }
+        Returns: {
+          like_count: number
+          prompt_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
