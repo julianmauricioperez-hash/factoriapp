@@ -3,6 +3,7 @@ import { Mic, Square, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AudioRecorderProps {
   onTranscription: (text: string) => void;
@@ -72,13 +73,17 @@ export function AudioRecorder({ onTranscription, disabled }: AudioRecorderProps)
       reader.readAsDataURL(audioBlob);
       const base64Audio = await base64Promise;
 
+      // Get the current session token for auth
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ audio: base64Audio, mimeType }),
         }

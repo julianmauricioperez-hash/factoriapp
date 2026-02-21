@@ -83,14 +83,32 @@ const Chat = () => {
       
       if (attachments && attachments.length > 0) {
         const attMap: Record<string, { type: string; url: string; name: string }[]> = {};
-        attachments.forEach((att: any) => {
+        // Generate signed URLs for each attachment
+        for (const att of attachments as any[]) {
+          // Extract the storage path from the file_url
+          const bucketPrefix = "/storage/v1/object/public/chat-attachments/";
+          const signedPrefix = "/storage/v1/object/sign/chat-attachments/";
+          let storagePath = att.file_url;
+          if (storagePath.includes(bucketPrefix)) {
+            storagePath = storagePath.split(bucketPrefix).pop() || storagePath;
+          } else if (storagePath.includes(signedPrefix)) {
+            storagePath = storagePath.split(signedPrefix).pop()?.split("?")[0] || storagePath;
+          } else if (storagePath.includes("chat-attachments/")) {
+            storagePath = storagePath.split("chat-attachments/").pop() || storagePath;
+          }
+          
+          const { data: signedData } = await supabase.storage
+            .from("chat-attachments")
+            .createSignedUrl(storagePath, 3600);
+          
+          const url = signedData?.signedUrl || att.file_url;
           if (!attMap[att.message_id]) attMap[att.message_id] = [];
           attMap[att.message_id].push({
             type: att.file_type,
-            url: att.file_url,
+            url,
             name: att.file_name,
           });
-        });
+        }
         setMessageAttachments(attMap);
       } else {
         setMessageAttachments({});
@@ -179,11 +197,16 @@ const Chat = () => {
       return null;
     }
 
-    const { data } = supabase.storage
+    const { data: signedData, error: signError } = await supabase.storage
       .from("chat-attachments")
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 3600); // 1 hour expiry
 
-    return data.publicUrl;
+    if (signError || !signedData?.signedUrl) {
+      console.error("Signed URL error:", signError);
+      return null;
+    }
+
+    return signedData.signedUrl;
   };
 
   // Read document text content
@@ -206,11 +229,15 @@ const Chat = () => {
   };
 
   const streamChat = async (allMessages: any[], model: string, isSearchMode: boolean) => {
+    // Get the current session token for auth
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
     const response = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ messages: allMessages, model, searchMode: isSearchMode }),
     });
