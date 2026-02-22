@@ -9,6 +9,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Menu,
@@ -22,6 +23,7 @@ import {
   Plus,
   MessageSquare,
   Tag,
+  ShieldCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -48,6 +50,7 @@ export function MobileNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, loading } = useAuth();
+  const { isAdmin } = useAdmin();
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -60,7 +63,12 @@ export function MobileNav() {
     navigate("/auth");
   };
 
-  const filteredNavItems = navItems.filter((item) => {
+  const allNavItems: NavItem[] = [
+    ...navItems,
+    ...(isAdmin ? [{ label: "Admin", icon: <ShieldCheck className="h-5 w-5" />, path: "/admin", requiresAuth: true }] : []),
+  ];
+
+  const filteredNavItems = allNavItems.filter((item) => {
     if (item.requiresAuth && !user) return false;
     if (item.hideWhenAuth && user) return false;
     return true;
