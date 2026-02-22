@@ -400,6 +400,29 @@ export type Database = {
           last_sign_in_at: string
         }[]
       }
+      admin_list_users_with_stats: {
+        Args: never
+        Returns: {
+          collection_count: number
+          conversation_count: number
+          created_at: string
+          email: string
+          id: string
+          last_sign_in_at: string
+          prompt_count: number
+          public_prompt_count: number
+        }[]
+      }
+      admin_recent_activity: {
+        Args: never
+        Returns: {
+          category: string
+          created_at: string
+          prompt_id: string
+          prompt_text: string
+          user_email: string
+        }[]
+      }
       generate_collection_slug: { Args: never; Returns: string }
       generate_prompt_slug: { Args: never; Returns: string }
       get_prompt_like_counts: {
