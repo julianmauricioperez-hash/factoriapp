@@ -4,6 +4,7 @@ import logoLight from "@/assets/Logo.svg";
 import logoDark from "@/assets/LogoDark.svg";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileNav } from "@/components/MobileNav";
 import {
@@ -17,6 +18,7 @@ import {
   Plus,
   MessageSquare,
   Tag,
+  ShieldCheck,
 } from "lucide-react";
 
 interface AppHeaderProps {
@@ -28,6 +30,7 @@ export function AppHeader({ title, showBackButton }: AppHeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, loading } = useAuth();
+  const { isAdmin } = useAdmin();
   const { resolvedTheme } = useTheme();
   const logoSrc = resolvedTheme === "dark" ? logoDark : logoLight;
 
@@ -122,6 +125,16 @@ export function AppHeader({ title, showBackButton }: AppHeaderProps) {
               <BookOpen className="mr-1 h-4 w-4" />
               Biblioteca
             </Button>
+            {isAdmin && (
+              <Button
+                variant={isActive("/admin") ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => navigate("/admin")}
+              >
+                <ShieldCheck className="mr-1 h-4 w-4" />
+                Admin
+              </Button>
+            )}
           </nav>
         </div>
 
