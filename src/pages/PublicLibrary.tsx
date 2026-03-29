@@ -33,6 +33,8 @@ const PublicLibrary = () => {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
+  const [minLikes, setMinLikes] = useState<string>("0");
+  const [dateRange, setDateRange] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [savingPromptId, setSavingPromptId] = useState<string | null>(null);
   const [previewPrompt, setPreviewPrompt] = useState<PublicPrompt | null>(null);
@@ -61,6 +63,16 @@ const PublicLibrary = () => {
     setCurrentPage(1);
   };
 
+  const getDateThreshold = () => {
+    const now = new Date();
+    switch (dateRange) {
+      case "week": return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      case "month": return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case "3months": return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      default: return null;
+    }
+  };
+
   const filteredPrompts = prompts
     .filter((prompt) => {
       const matchesSearch = prompt.prompt_text
@@ -71,7 +83,10 @@ const PublicLibrary = () => {
       const matchesTags =
         selectedTags.length === 0 ||
         selectedTags.every((tagId) => prompt.tags.some((t) => t.id === tagId));
-      return matchesSearch && matchesCategory && matchesTags;
+      const matchesLikes = (likeCounts[prompt.id] || 0) >= parseInt(minLikes);
+      const dateThreshold = getDateThreshold();
+      const matchesDate = !dateThreshold || new Date(prompt.created_at) >= dateThreshold;
+      return matchesSearch && matchesCategory && matchesTags && matchesLikes && matchesDate;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -90,7 +105,7 @@ const PublicLibrary = () => {
       }
     });
 
-  const hasActiveFilters = searchQuery !== "" || filterCategory !== "all" || selectedTags.length > 0;
+  const hasActiveFilters = searchQuery !== "" || filterCategory !== "all" || selectedTags.length > 0 || minLikes !== "0" || dateRange !== "all";
   const isFiltered = filteredPrompts.length !== prompts.length;
 
   // Pagination
@@ -117,6 +132,8 @@ const PublicLibrary = () => {
     setSearchQuery("");
     setFilterCategory("all");
     setSelectedTags([]);
+    setMinLikes("0");
+    setDateRange("all");
     setCurrentPage(1);
   };
 
@@ -246,6 +263,33 @@ const PublicLibrary = () => {
               <SelectItem value="date-asc">Más antiguos</SelectItem>
               <SelectItem value="category-asc">Categoría A-Z</SelectItem>
               <SelectItem value="category-desc">Categoría Z-A</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Advanced filters row */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+          <Select value={minLikes} onValueChange={(v) => { setMinLikes(v); setCurrentPage(1); }}>
+            <SelectTrigger className="w-full sm:w-[150px] bg-background">
+              <Heart className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Likes mínimos" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover">
+              <SelectItem value="0">Todos</SelectItem>
+              <SelectItem value="5">5+ likes</SelectItem>
+              <SelectItem value="10">10+ likes</SelectItem>
+              <SelectItem value="20">20+ likes</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={dateRange} onValueChange={(v) => { setDateRange(v); setCurrentPage(1); }}>
+            <SelectTrigger className="w-full sm:w-[160px] bg-background">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover">
+              <SelectItem value="all">Todo el tiempo</SelectItem>
+              <SelectItem value="week">Última semana</SelectItem>
+              <SelectItem value="month">Último mes</SelectItem>
+              <SelectItem value="3months">Últimos 3 meses</SelectItem>
             </SelectContent>
           </Select>
         </div>

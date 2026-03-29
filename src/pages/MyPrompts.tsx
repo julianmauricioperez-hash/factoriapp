@@ -34,11 +34,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
 import { useCollections } from "@/hooks/useCollections";
 import { useTags } from "@/hooks/useTags";
-import { Plus, Search, X, ArrowUpDown, Download, ChevronLeft, ChevronRight, Star, FolderOpen } from "lucide-react";
+import { Plus, Search, X, ArrowUpDown, Download, Upload, ChevronLeft, ChevronRight, Star, FolderOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PromptCard } from "@/components/PromptCard";
 import { AppLayout } from "@/components/AppLayout";
 import { TagsFilter } from "@/components/TagsFilter";
+import { ImportPromptsDialog } from "@/components/ImportPromptsDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,6 +94,7 @@ const MyPrompts = () => {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const ITEMS_PER_PAGE = 10;
 
   const filteredAndSortedPrompts = prompts
@@ -377,22 +379,28 @@ const MyPrompts = () => {
             Mis Prompts
           </h1>
           {prompts.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 md:mr-1" />
-                  <span className="hidden md:inline">Exportar</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-popover">
-                <DropdownMenuItem onClick={exportToJSON}>
-                  Exportar como JSON
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={exportToCSV}>
-                  Exportar como CSV
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)}>
+                <Upload className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">Importar</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">Exportar</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-popover">
+                  <DropdownMenuItem onClick={exportToJSON}>
+                    Exportar como JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportToCSV}>
+                    Exportar como CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
 
@@ -661,6 +669,12 @@ const MyPrompts = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+
+      <ImportPromptsDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImportComplete={fetchPrompts}
+      />
     </AppLayout>
   );
 };
