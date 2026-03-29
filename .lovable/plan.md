@@ -1,68 +1,65 @@
 
-## Adjuntar archivos, imagenes y audio en el Chat IA
 
-Se implementara la capacidad de adjuntar **imagenes**, **documentos** y **grabar audio** directamente en el chat, para que la IA pueda analizar el contenido visual o transcribir el audio.
+## Plan: Landing Page, Búsqueda Avanzada e Import/Export
 
----
+### Resumen
 
-### Que podra hacer el usuario
-
-1. **Adjuntar imagenes** (JPG, PNG, WEBP, GIF) - La IA las analiza usando modelos con vision (Gemini)
-2. **Adjuntar documentos** (PDF, TXT, MD) - Se extrae el texto y se envia como contexto al chat
-3. **Grabar audio** con el microfono del dispositivo - Se convierte a texto (transcripcion) y se envia como mensaje
+Tres mejoras principales: (1) rediseñar la landing page con secciones informativas, (2) añadir búsqueda avanzada combinada en la Biblioteca Pública, y (3) agregar importación masiva de prompts.
 
 ---
 
-### Resumen de cambios
+### 1. Landing Page mejorada (`src/pages/Index.tsx`)
 
-#### 1. Almacenamiento de archivos
-Se creara un bucket de almacenamiento llamado `chat-attachments` para guardar las imagenes y audios subidos, con politicas de seguridad para que cada usuario solo acceda a sus propios archivos.
+Restructurar la página principal para que, además del formulario de crear prompt, incluya secciones informativas debajo:
 
-#### 2. Tabla de adjuntos
-Se agregara una nueva tabla `chat_attachments` que vincula archivos con mensajes del chat, guardando el tipo de archivo, nombre y URL publica.
+**Secciones nuevas (componentes en `src/components/landing/`):**
 
-#### 3. Transcripcion de audio (funcion backend)
-Se creara una funcion backend `transcribe-audio` que recibe el audio grabado y usa un modelo de IA para transcribirlo a texto.
+- **HeroSection**: Encabezado principal con tagline, descripción y botones CTA ("Empieza ahora" y "Explorar biblioteca")
+- **HowItWorksSection**: 3 pasos con iconos: (1) Escribe tu prompt, (2) Mejóralo con IA, (3) Organiza y comparte
+- **UseCasesSection**: 4-6 tarjetas con ejemplos de uso (Marketing, Código, Educación, Escritura creativa, etc.) con prompt de ejemplo en cada una
+- **TestimonialsSection**: 3 testimonios estáticos con avatar placeholder, nombre y quote
+- **CTASection**: Llamada a la acción final con botón de registro/inicio
 
-#### 4. Interfaz del chat mejorada
-- **Barra de entrada**: Se agregaran 3 botones nuevos junto al campo de texto:
-  - Boton de **clip** (adjuntar imagen/documento)
-  - Boton de **microfono** (grabar audio)
-- **Vista previa**: Antes de enviar, el usuario vera una miniatura de la imagen o el nombre del archivo adjunto, con opcion de eliminar
-- **Mensajes**: Los mensajes con imagenes mostraran la imagen inline; los de audio mostraran un indicador de "transcrito desde audio"
+**Estructura de la página:**
+- Si el usuario NO está logueado: mostrar Hero + Cómo funciona + Casos de uso + Testimonios + CTA
+- Si el usuario STA logueado: mostrar el formulario actual de crear prompt (comportamiento actual)
 
-#### 5. Logica de envio multimodal
-- Para **imagenes**: Se sube la imagen al almacenamiento, se obtiene la URL publica y se envia al modelo de IA como contenido multimodal (texto + imagen)
-- Para **documentos**: Se lee el contenido del archivo en el navegador y se agrega como texto al mensaje
-- Para **audio**: Se graba con la API `MediaRecorder` del navegador, se envia a la funcion de transcripcion, y el texto resultante se envia como mensaje normal
+### 2. Búsqueda avanzada en Biblioteca Pública (`src/pages/PublicLibrary.tsx`)
+
+La Biblioteca Pública ya tiene filtros por texto, categoría, tags y orden. Mejoras:
+
+- **Filtro por popularidad**: Añadir rango de likes mínimo (slider o select: "Todos", "5+ likes", "10+ likes", "20+ likes")
+- **Filtro por fecha**: Añadir filtro de rango temporal ("Última semana", "Último mes", "Últimos 3 meses", "Todo")
+- **Búsqueda combinada**: Ya funciona combinada; solo se añaden los dos filtros nuevos al flujo existente
+- **UI**: Añadir los nuevos filtros como selects adicionales en la fila de filtros existente
+
+### 3. Exportar/Importar prompts (`src/pages/MyPrompts.tsx`)
+
+**Exportar** ya existe (JSON y CSV). Mejoras:
+
+- **Importar JSON**: Botón "Importar" junto a "Exportar" que abre un diálogo con:
+  - Input de archivo (acepta .json y .csv)
+  - Preview de los prompts a importar (cantidad y categorías)
+  - Botón de confirmación
+  - Inserción masiva vía `supabase.from("prompts").insert([])`
+- **Importar CSV**: Parser básico que lee las columnas Categoría y Prompt
+- **Componente**: `src/components/ImportPromptsDialog.tsx`
 
 ---
 
-### Detalles tecnicos
+### Archivos a crear/modificar
 
-**Base de datos - Migracion SQL:**
-- Crear bucket `chat-attachments` (publico para servir imagenes en el chat)
-- Crear tabla `chat_attachments` con columnas: `id`, `message_id` (FK a `chat_messages`), `file_type` (image/document/audio), `file_name`, `file_url`, `created_at`
-- Politicas RLS en el bucket: los usuarios autenticados pueden subir a su propia carpeta (`user_id/`) y leer archivos publicos
-- Politicas RLS en la tabla: lectura/escritura limitada al propietario de la conversacion
-
-**Nueva funcion backend: `transcribe-audio`**
-- Recibe audio (base64 o archivo)
-- Usa el modelo `google/gemini-2.5-flash` con instruccion de transcripcion
-- Devuelve el texto transcrito
-
-**Funcion backend existente: `chat` (modificacion)**
-- Adaptar para aceptar mensajes con contenido multimodal (array de `content` con tipo `text` e `image_url`) segun el formato de la API de Lovable AI
-
-**Archivos frontend a modificar/crear:**
-
-| Archivo | Cambio |
+| Archivo | Acción |
 |---|---|
-| `src/components/chat/ChatInput.tsx` | Agregar botones de adjuntar y microfono, vista previa de archivos, logica de grabacion de audio |
-| `src/components/chat/ChatMessages.tsx` | Renderizar imagenes inline en mensajes, indicador de audio transcrito |
-| `src/pages/Chat.tsx` | Actualizar `handleSendMessage` para manejar adjuntos, subir archivos al almacenamiento, envio multimodal |
-| `src/hooks/useChatConversations.ts` | Actualizar `addMessage` para soportar adjuntos, agregar funcion para guardar adjuntos |
-| `src/components/chat/AttachmentPreview.tsx` | **Nuevo** - Componente de vista previa de archivos adjuntos antes de enviar |
-| `src/components/chat/AudioRecorder.tsx` | **Nuevo** - Componente para grabar audio con el microfono |
-| `supabase/functions/transcribe-audio/index.ts` | **Nuevo** - Funcion para transcribir audio a texto |
-| `supabase/functions/chat/index.ts` | Modificar para soportar mensajes con imagenes (formato multimodal) |
+| `src/components/landing/HeroSection.tsx` | Crear |
+| `src/components/landing/HowItWorksSection.tsx` | Crear |
+| `src/components/landing/UseCasesSection.tsx` | Crear |
+| `src/components/landing/TestimonialsSection.tsx` | Crear |
+| `src/components/landing/CTASection.tsx` | Crear |
+| `src/pages/Index.tsx` | Modificar - condicional logged in/out |
+| `src/pages/PublicLibrary.tsx` | Modificar - añadir filtros de fecha y popularidad |
+| `src/components/ImportPromptsDialog.tsx` | Crear |
+| `src/pages/MyPrompts.tsx` | Modificar - añadir botón importar |
+
+No se requieren cambios en la base de datos.
+
