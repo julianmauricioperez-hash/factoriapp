@@ -43,7 +43,8 @@ export const TestimonialsSection = () => {
                   "{t.quote}"
                 </p>
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-9 w-9">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={t.image} alt={t.name} loading="lazy" />
                     <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                       {t.initials}
                     </AvatarFallback>
