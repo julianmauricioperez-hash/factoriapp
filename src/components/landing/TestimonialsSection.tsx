@@ -9,18 +9,21 @@ const testimonials = [
     name: "María López",
     role: "Content Manager",
     initials: "ML",
+    image: mariaImg,
     quote: "Factoría transformó la forma en que creo contenido. Mis prompts ahora generan resultados mucho más precisos y útiles.",
   },
   {
     name: "Carlos Ruiz",
     role: "Desarrollador Full-Stack",
     initials: "CR",
+    image: carlosImg,
     quote: "La función de mejorar con IA es increíble. Me ahorra horas de iteración al crear prompts para programación.",
   },
   {
     name: "Ana Martínez",
     role: "Profesora universitaria",
     initials: "AM",
+    image: anaImg,
     quote: "Organizo todos mis prompts educativos en colecciones. Compartirlos con mis colegas nunca fue tan fácil.",
   },
 ];
