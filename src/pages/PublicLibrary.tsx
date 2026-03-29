@@ -33,6 +33,8 @@ const PublicLibrary = () => {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
+  const [minLikes, setMinLikes] = useState<string>("0");
+  const [dateRange, setDateRange] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [savingPromptId, setSavingPromptId] = useState<string | null>(null);
   const [previewPrompt, setPreviewPrompt] = useState<PublicPrompt | null>(null);
