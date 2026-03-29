@@ -63,6 +63,16 @@ const PublicLibrary = () => {
     setCurrentPage(1);
   };
 
+  const getDateThreshold = () => {
+    const now = new Date();
+    switch (dateRange) {
+      case "week": return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      case "month": return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case "3months": return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      default: return null;
+    }
+  };
+
   const filteredPrompts = prompts
     .filter((prompt) => {
       const matchesSearch = prompt.prompt_text
@@ -73,7 +83,10 @@ const PublicLibrary = () => {
       const matchesTags =
         selectedTags.length === 0 ||
         selectedTags.every((tagId) => prompt.tags.some((t) => t.id === tagId));
-      return matchesSearch && matchesCategory && matchesTags;
+      const matchesLikes = (likeCounts[prompt.id] || 0) >= parseInt(minLikes);
+      const dateThreshold = getDateThreshold();
+      const matchesDate = !dateThreshold || new Date(prompt.created_at) >= dateThreshold;
+      return matchesSearch && matchesCategory && matchesTags && matchesLikes && matchesDate;
     })
     .sort((a, b) => {
       switch (sortBy) {
