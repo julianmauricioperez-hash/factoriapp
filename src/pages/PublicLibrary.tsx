@@ -105,7 +105,7 @@ const PublicLibrary = () => {
       }
     });
 
-  const hasActiveFilters = searchQuery !== "" || filterCategory !== "all" || selectedTags.length > 0;
+  const hasActiveFilters = searchQuery !== "" || filterCategory !== "all" || selectedTags.length > 0 || minLikes !== "0" || dateRange !== "all";
   const isFiltered = filteredPrompts.length !== prompts.length;
 
   // Pagination
