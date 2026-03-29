@@ -34,7 +34,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
 import { useCollections } from "@/hooks/useCollections";
 import { useTags } from "@/hooks/useTags";
-import { Plus, Search, X, ArrowUpDown, Download, ChevronLeft, ChevronRight, Star, FolderOpen } from "lucide-react";
+import { Plus, Search, X, ArrowUpDown, Download, Upload, ChevronLeft, ChevronRight, Star, FolderOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PromptCard } from "@/components/PromptCard";
 import { AppLayout } from "@/components/AppLayout";
