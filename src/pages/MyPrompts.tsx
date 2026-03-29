@@ -669,6 +669,12 @@ const MyPrompts = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+
+      <ImportPromptsDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImportComplete={fetchPrompts}
+      />
     </AppLayout>
   );
 };
