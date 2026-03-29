@@ -1,5 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import mariaImg from "@/assets/testimonials/maria.jpg";
+import carlosImg from "@/assets/testimonials/carlos.jpg";
+import anaImg from "@/assets/testimonials/ana.jpg";
 
 const testimonials = [
   {
