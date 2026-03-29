@@ -267,6 +267,32 @@ const PublicLibrary = () => {
           </Select>
         </div>
 
+        {/* Advanced filters row */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+          <Select value={minLikes} onValueChange={(v) => { setMinLikes(v); setCurrentPage(1); }}>
+            <SelectTrigger className="w-full sm:w-[150px] bg-background">
+              <Heart className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Likes mínimos" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover">
+              <SelectItem value="0">Todos</SelectItem>
+              <SelectItem value="5">5+ likes</SelectItem>
+              <SelectItem value="10">10+ likes</SelectItem>
+              <SelectItem value="20">20+ likes</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={dateRange} onValueChange={(v) => { setDateRange(v); setCurrentPage(1); }}>
+            <SelectTrigger className="w-full sm:w-[160px] bg-background">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover">
+              <SelectItem value="all">Todo el tiempo</SelectItem>
+              <SelectItem value="week">Última semana</SelectItem>
+              <SelectItem value="month">Último mes</SelectItem>
+              <SelectItem value="3months">Últimos 3 meses</SelectItem>
+            </SelectContent>
+          </Select>
+
         {/* Tags filter */}
         {availableTags.length > 0 && (
           <div className="mb-4">

@@ -39,6 +39,7 @@ import { Input } from "@/components/ui/input";
 import { PromptCard } from "@/components/PromptCard";
 import { AppLayout } from "@/components/AppLayout";
 import { TagsFilter } from "@/components/TagsFilter";
+import { ImportPromptsDialog } from "@/components/ImportPromptsDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
