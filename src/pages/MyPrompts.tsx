@@ -379,22 +379,28 @@ const MyPrompts = () => {
             Mis Prompts
           </h1>
           {prompts.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 md:mr-1" />
-                  <span className="hidden md:inline">Exportar</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-popover">
-                <DropdownMenuItem onClick={exportToJSON}>
-                  Exportar como JSON
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={exportToCSV}>
-                  Exportar como CSV
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)}>
+                <Upload className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">Importar</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">Exportar</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-popover">
+                  <DropdownMenuItem onClick={exportToJSON}>
+                    Exportar como JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportToCSV}>
+                    Exportar como CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
 
