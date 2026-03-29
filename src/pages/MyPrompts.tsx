@@ -94,6 +94,7 @@ const MyPrompts = () => {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const ITEMS_PER_PAGE = 10;
 
   const filteredAndSortedPrompts = prompts
