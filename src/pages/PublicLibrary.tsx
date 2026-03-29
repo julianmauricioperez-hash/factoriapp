@@ -132,6 +132,8 @@ const PublicLibrary = () => {
     setSearchQuery("");
     setFilterCategory("all");
     setSelectedTags([]);
+    setMinLikes("0");
+    setDateRange("all");
     setCurrentPage(1);
   };
 
