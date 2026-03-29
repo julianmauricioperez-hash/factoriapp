@@ -292,6 +292,7 @@ const PublicLibrary = () => {
               <SelectItem value="3months">Últimos 3 meses</SelectItem>
             </SelectContent>
           </Select>
+        </div>
 
         {/* Tags filter */}
         {availableTags.length > 0 && (
