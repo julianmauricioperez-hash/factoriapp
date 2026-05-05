@@ -220,8 +220,18 @@ export default function Admin() {
                     <TableHead className="text-center">Chats</TableHead>
                     <TableHead>Registro</TableHead>
                     <TableHead>Último acceso</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
+                <TableBody>
+                  {users.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {u.email}
+                          {u.is_admin && <Badge variant="default" className="text-xs">Admin</Badge>}
+                        </div>
+                      </TableCell>
                 <TableBody>
                   {users.map((u) => (
                     <TableRow key={u.id}>
