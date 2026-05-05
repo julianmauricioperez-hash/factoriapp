@@ -344,6 +344,19 @@ export default function Admin() {
           </CardContent>
         </Card>
       </div>
+
+      <UserFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        user={editingUser}
+        onSuccess={fetchUsers}
+      />
+      <DeleteUserDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        user={deletingUser}
+        onSuccess={fetchUsers}
+      />
     </AppLayout>
   );
 }
