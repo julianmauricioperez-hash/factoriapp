@@ -23,9 +23,15 @@ import {
   MessageSquare,
   Globe,
   Clock,
+  UserPlus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { UserFormDialog, UserFormUser } from "@/components/admin/UserFormDialog";
+import { DeleteUserDialog } from "@/components/admin/DeleteUserDialog";
 
 interface AdminUser {
   id: string;
@@ -36,6 +42,7 @@ interface AdminUser {
   public_prompt_count: number;
   collection_count: number;
   conversation_count: number;
+  is_admin: boolean;
 }
 
 interface RecentActivity {
