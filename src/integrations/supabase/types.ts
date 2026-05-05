@@ -408,6 +408,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          is_admin: boolean
           last_sign_in_at: string
           prompt_count: number
           public_prompt_count: number
