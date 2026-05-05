@@ -260,6 +260,31 @@ export default function Admin() {
                           ? formatDistanceToNow(new Date(u.last_sign_in_at), { addSuffix: true, locale: es })
                           : <span className="text-muted-foreground italic">Nunca</span>}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingUser({ id: u.id, email: u.email, is_admin: u.is_admin });
+                              setFormOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setDeletingUser({ id: u.id, email: u.email });
+                              setDeleteOpen(true);
+                            }}
+                            disabled={u.id === user?.id}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
