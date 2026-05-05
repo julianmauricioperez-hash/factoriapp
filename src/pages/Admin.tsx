@@ -232,10 +232,6 @@ export default function Admin() {
                           {u.is_admin && <Badge variant="default" className="text-xs">Admin</Badge>}
                         </div>
                       </TableCell>
-                <TableBody>
-                  {users.map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.email}</TableCell>
                       <TableCell className="text-center">
                         <Badge variant={u.prompt_count > 0 ? "default" : "secondary"}>
                           {u.prompt_count}
