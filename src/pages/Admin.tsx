@@ -61,6 +61,10 @@ export default function Admin() {
   const [activity, setActivity] = useState<RecentActivity[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingActivity, setLoadingActivity] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserFormUser | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<{ id: string; email: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -71,27 +75,22 @@ export default function Admin() {
     }
   }, [authLoading, adminLoading, user, isAdmin, navigate]);
 
+  const fetchUsers = async () => {
+    const { data, error } = await supabase.rpc("admin_list_users_with_stats");
+    if (!error && data) setUsers(data as AdminUser[]);
+    setLoadingUsers(false);
+  };
+
+  const fetchActivity = async () => {
+    const { data, error } = await supabase.rpc("admin_recent_activity");
+    if (!error && data) setActivity(data as RecentActivity[]);
+    setLoadingActivity(false);
+  };
+
   useEffect(() => {
     if (!isAdmin) return;
-
-    const fetchData = async () => {
-      const [usersRes, activityRes] = await Promise.all([
-        supabase.rpc("admin_list_users_with_stats"),
-        supabase.rpc("admin_recent_activity"),
-      ]);
-
-      if (!usersRes.error && usersRes.data) {
-        setUsers(usersRes.data as AdminUser[]);
-      }
-      setLoadingUsers(false);
-
-      if (!activityRes.error && activityRes.data) {
-        setActivity(activityRes.data as RecentActivity[]);
-      }
-      setLoadingActivity(false);
-    };
-
-    fetchData();
+    fetchUsers();
+    fetchActivity();
   }, [isAdmin]);
 
   if (authLoading || adminLoading) {
