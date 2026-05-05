@@ -23,9 +23,15 @@ import {
   MessageSquare,
   Globe,
   Clock,
+  UserPlus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { UserFormDialog, UserFormUser } from "@/components/admin/UserFormDialog";
+import { DeleteUserDialog } from "@/components/admin/DeleteUserDialog";
 
 interface AdminUser {
   id: string;
@@ -36,6 +42,7 @@ interface AdminUser {
   public_prompt_count: number;
   collection_count: number;
   conversation_count: number;
+  is_admin: boolean;
 }
 
 interface RecentActivity {
@@ -54,6 +61,10 @@ export default function Admin() {
   const [activity, setActivity] = useState<RecentActivity[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingActivity, setLoadingActivity] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserFormUser | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<{ id: string; email: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -64,27 +75,22 @@ export default function Admin() {
     }
   }, [authLoading, adminLoading, user, isAdmin, navigate]);
 
+  const fetchUsers = async () => {
+    const { data, error } = await supabase.rpc("admin_list_users_with_stats");
+    if (!error && data) setUsers(data as AdminUser[]);
+    setLoadingUsers(false);
+  };
+
+  const fetchActivity = async () => {
+    const { data, error } = await supabase.rpc("admin_recent_activity");
+    if (!error && data) setActivity(data as RecentActivity[]);
+    setLoadingActivity(false);
+  };
+
   useEffect(() => {
     if (!isAdmin) return;
-
-    const fetchData = async () => {
-      const [usersRes, activityRes] = await Promise.all([
-        supabase.rpc("admin_list_users_with_stats"),
-        supabase.rpc("admin_recent_activity"),
-      ]);
-
-      if (!usersRes.error && usersRes.data) {
-        setUsers(usersRes.data as AdminUser[]);
-      }
-      setLoadingUsers(false);
-
-      if (!activityRes.error && activityRes.data) {
-        setActivity(activityRes.data as RecentActivity[]);
-      }
-      setLoadingActivity(false);
-    };
-
-    fetchData();
+    fetchUsers();
+    fetchActivity();
   }, [isAdmin]);
 
   if (authLoading || adminLoading) {
@@ -181,7 +187,19 @@ export default function Admin() {
                   {loadingUsers ? "Cargando..." : `${users.length} usuarios en total`}
                 </CardDescription>
               </div>
-              <Badge variant="secondary">{users.length}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{users.length}</Badge>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingUser(null);
+                    setFormOpen(true);
+                  }}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Nuevo usuario
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -202,12 +220,18 @@ export default function Admin() {
                     <TableHead className="text-center">Chats</TableHead>
                     <TableHead>Registro</TableHead>
                     <TableHead>Último acceso</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((u) => (
                     <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.email}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {u.email}
+                          {u.is_admin && <Badge variant="default" className="text-xs">Admin</Badge>}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-center">
                         <Badge variant={u.prompt_count > 0 ? "default" : "secondary"}>
                           {u.prompt_count}
@@ -235,6 +259,31 @@ export default function Admin() {
                         {u.last_sign_in_at
                           ? formatDistanceToNow(new Date(u.last_sign_in_at), { addSuffix: true, locale: es })
                           : <span className="text-muted-foreground italic">Nunca</span>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingUser({ id: u.id, email: u.email, is_admin: u.is_admin });
+                              setFormOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setDeletingUser({ id: u.id, email: u.email });
+                              setDeleteOpen(true);
+                            }}
+                            disabled={u.id === user?.id}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -295,6 +344,19 @@ export default function Admin() {
           </CardContent>
         </Card>
       </div>
+
+      <UserFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        user={editingUser}
+        onSuccess={fetchUsers}
+      />
+      <DeleteUserDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        user={deletingUser}
+        onSuccess={fetchUsers}
+      />
     </AppLayout>
   );
 }
