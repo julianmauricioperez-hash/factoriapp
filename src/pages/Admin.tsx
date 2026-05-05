@@ -187,7 +187,19 @@ export default function Admin() {
                   {loadingUsers ? "Cargando..." : `${users.length} usuarios en total`}
                 </CardDescription>
               </div>
-              <Badge variant="secondary">{users.length}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{users.length}</Badge>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingUser(null);
+                    setFormOpen(true);
+                  }}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Nuevo usuario
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
