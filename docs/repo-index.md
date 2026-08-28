@@ -87,3 +87,5 @@ src/main.tsx → src/App.tsx ──► src/pages/*
 - [`CHANGELOG.md`](../CHANGELOG.md) — historial de versiones.
 - [`docs/architecture.md`](./architecture.md) — diagramas de sistema, BD, auth y streaming.
 - [`docs/api.md`](./api.md) — rutas, edge functions, RPC y contratos de datos.
+- [`docs/deployment.md`](./deployment.md) — staging, producción, variables de entorno y builds.
+- [`docs/admin-authorization.md`](./admin-authorization.md) — reglas de acceso al panel admin.
