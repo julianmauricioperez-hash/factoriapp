@@ -13,6 +13,8 @@ multimodal con modo búsqueda, estadísticas y un panel de administración.
 | [docs/architecture.md](./docs/architecture.md) | Diagramas: sistema end-to-end, base de datos, auth y streaming. |
 | [docs/api.md](./docs/api.md) | Rutas, edge functions, RPC y contratos de datos con ejemplos. |
 | [docs/repo-index.md](./docs/repo-index.md) | Índice del repositorio y responsabilidad de cada carpeta. |
+| [docs/deployment.md](./docs/deployment.md) | Despliegue en staging y producción, variables de entorno y builds. |
+| [docs/admin-authorization.md](./docs/admin-authorization.md) | Reglas de autorización del panel admin y respuestas 401/403. |
 
 ## Funcionalidades
 

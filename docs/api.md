@@ -28,7 +28,8 @@ Definidas en `src/App.tsx`.
 | `*` | `NotFound.tsx` | Pública | 404. |
 
 > Las rutas privadas redirigen a `/auth` cuando `useAuth()` no tiene sesión.
-> `/admin` además comprueba `useAdmin()` (RPC `has_role`) y muestra 404/redirección si no aplica.
+> `/admin` además comprueba `useAdmin()` (RPC `has_role`) y redirige a `/` si el usuario no es
+> administrador. Detalle completo en [autorización del panel admin](./admin-authorization.md).
 
 ---
 

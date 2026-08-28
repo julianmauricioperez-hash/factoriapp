@@ -92,6 +92,7 @@ npm run test -- src/test/example.test.ts   # un archivo concreto
   y validar el body con Zod.
 
 Detalles en [`docs/architecture.md`](./docs/architecture.md) y [`docs/api.md`](./docs/api.md).
+Para publicar, sigue [`docs/deployment.md`](./docs/deployment.md).
 
 ## 7. Commits
 

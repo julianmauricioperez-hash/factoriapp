@@ -7,6 +7,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 - Documentación completa del repositorio: [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`docs/architecture.md`](./docs/architecture.md), [`docs/api.md`](./docs/api.md), [`docs/repo-index.md`](./docs/repo-index.md).
+- Guía de despliegue para staging y producción con variables de entorno, builds y rollback: [`docs/deployment.md`](./docs/deployment.md).
+- Documentación de las reglas de autorización del panel admin con ejemplos 401/403/400: [`docs/admin-authorization.md`](./docs/admin-authorization.md).
 
 ---
 
