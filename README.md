@@ -1,73 +1,62 @@
-# Welcome to your Lovable project
+# Factoría
 
-## Project info
+**Factoría** es una aplicación web (PWA) para crear, organizar, compartir y optimizar prompts de IA.
+Incluye biblioteca personal y pública, colecciones, etiquetas, variables `{{variable}}`, chat IA
+multimodal con modo búsqueda, estadísticas y un panel de administración.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Índice de documentación
 
-## How can I edit this code?
+| Documento | Contenido |
+| --- | --- |
+| [CHANGELOG.md](./CHANGELOG.md) | Versiones y cambios recientes. |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Entorno local, tests, lint, builds y convenciones. |
+| [docs/architecture.md](./docs/architecture.md) | Diagramas: sistema end-to-end, base de datos, auth y streaming. |
+| [docs/api.md](./docs/api.md) | Rutas, edge functions, RPC y contratos de datos con ejemplos. |
+| [docs/repo-index.md](./docs/repo-index.md) | Índice del repositorio y responsabilidad de cada carpeta. |
 
-There are several ways of editing your application.
+## Funcionalidades
 
-**Use Lovable**
+- **Prompts**: CRUD con categorías, etiquetas, favoritos, variables y plantillas.
+- **Colecciones**: agrupación con color, estadísticas, orden manual y enlace público.
+- **Compartir**: slugs públicos para prompts (`/p/:slug`) y colecciones (`/c/:slug`).
+- **Biblioteca pública**: búsqueda combinada por texto, categoría, tags, popularidad y fecha; likes y clonado.
+- **Chat IA**: 7 modelos (Gemini y GPT), adjuntos (imágenes, documentos, audio), streaming y Modo Búsqueda.
+- **Import/Export**: JSON y CSV, con vista previa en la importación masiva.
+- **Auth**: email + contraseña, Google OAuth, recuperación de contraseña y protección HIBP.
+- **Admin**: métricas globales, estadísticas por usuario, actividad reciente y gestión de cuentas.
+- **PWA**: instalable, con service worker, iconos propios y página `/install`.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+React 18 · Vite 5 · TypeScript · Tailwind CSS · shadcn/ui · React Router · React Query ·
+Lovable Cloud (Postgres + Auth + Storage + Edge Functions) · Lovable AI Gateway (Gemini / GPT).
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Arranque rápido
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm install
+npm run dev     # http://localhost:8080
 ```
 
-**Edit a file directly in GitHub**
+Pasos detallados, scripts y checklist previo a un PR en [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Estructura resumida
 
-**Use GitHub Codespaces**
+```text
+src/
+  pages/        Una pantalla por ruta
+  components/   UI de dominio + primitivas shadcn en components/ui
+  hooks/        Acceso a datos y estado compartido
+  lib/          Utilidades puras
+  integrations/ Cliente y tipos del backend (autogenerado)
+supabase/
+  migrations/   Esquema versionado (tablas, RLS, funciones)
+  functions/    chat · improve-prompt · transcribe-audio · admin-users
+docs/           Arquitectura, API e índice del repositorio
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Descripción completa en [docs/repo-index.md](./docs/repo-index.md).
 
-## What technologies are used for this project?
+## Despliegue
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+El proyecto se publica desde Lovable con el botón **Publish**. Dominios: Project → Settings → Domains.
