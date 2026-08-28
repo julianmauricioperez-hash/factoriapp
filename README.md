@@ -1,34 +1,62 @@
-# FactorIA App
+# Factoría
 
-hola ayudame a generar una app estilo formulario que pueda registrar prompts 
+**Factoría** es una aplicación web (PWA) para crear, organizar, compartir y optimizar prompts de IA.
+Incluye biblioteca personal y pública, colecciones, etiquetas, variables `{{variable}}`, chat IA
+multimodal con modo búsqueda, estadísticas y un panel de administración.
 
-el formulario pide 
+## Índice de documentación
 
-un campo que diga categoría y otro campo que diga prompt 
+| Documento | Contenido |
+| --- | --- |
+| [CHANGELOG.md](./CHANGELOG.md) | Versiones y cambios recientes. |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Entorno local, tests, lint, builds y convenciones. |
+| [docs/architecture.md](./docs/architecture.md) | Diagramas: sistema end-to-end, base de datos, auth y streaming. |
+| [docs/api.md](./docs/api.md) | Rutas, edge functions, RPC y contratos de datos con ejemplos. |
+| [docs/repo-index.md](./docs/repo-index.md) | Índice del repositorio y responsabilidad de cada carpeta. |
 
-hazlo simple y minimalista responsive 
+## Funcionalidades
 
-y que despues de enviado el prompt salga un aviso que diga gracias por alimentar l aIA
+- **Prompts**: CRUD con categorías, etiquetas, favoritos, variables y plantillas.
+- **Colecciones**: agrupación con color, estadísticas, orden manual y enlace público.
+- **Compartir**: slugs públicos para prompts (`/p/:slug`) y colecciones (`/c/:slug`).
+- **Biblioteca pública**: búsqueda combinada por texto, categoría, tags, popularidad y fecha; likes y clonado.
+- **Chat IA**: 7 modelos (Gemini y GPT), adjuntos (imágenes, documentos, audio), streaming y Modo Búsqueda.
+- **Import/Export**: JSON y CSV, con vista previa en la importación masiva.
+- **Auth**: email + contraseña, Google OAuth, recuperación de contraseña y protección HIBP.
+- **Admin**: métricas globales, estadísticas por usuario, actividad reciente y gestión de cuentas.
+- **PWA**: instalable, con service worker, iconos propios y página `/install`.
 
-This project was built with [Lovable](https://lovable.dev).
+## Stack
 
-**Live app**: https://factoria.lovable.app
+React 18 · Vite 5 · TypeScript · Tailwind CSS · shadcn/ui · React Router · React Query ·
+Lovable Cloud (Postgres + Auth + Storage + Edge Functions) · Lovable AI Gateway (Gemini / GPT).
 
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/48b37dff-845d-4ac8-a98c-1a7d533b0cd4).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## Arranque rápido
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+npm install
+npm run dev     # http://localhost:8080
 ```
+
+Pasos detallados, scripts y checklist previo a un PR en [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Estructura resumida
+
+```text
+src/
+  pages/        Una pantalla por ruta
+  components/   UI de dominio + primitivas shadcn en components/ui
+  hooks/        Acceso a datos y estado compartido
+  lib/          Utilidades puras
+  integrations/ Cliente y tipos del backend (autogenerado)
+supabase/
+  migrations/   Esquema versionado (tablas, RLS, funciones)
+  functions/    chat · improve-prompt · transcribe-audio · admin-users
+docs/           Arquitectura, API e índice del repositorio
+```
+
+Descripción completa en [docs/repo-index.md](./docs/repo-index.md).
+
+## Despliegue
+
+El proyecto se publica desde Lovable con el botón **Publish**. Dominios: Project → Settings → Domains.
